@@ -14,6 +14,7 @@ MARKET_DATA_TABLES = {
     "competitor_listings",
     "price_observations",
     "waitlist_entries",  # leady sprzed rejestracji — dane globalne, per e-mail+rynek
+    "floor_signals",  # sygnał "minimum rynku" ze źródeł bezdatowych — dane rynkowe
 }
 
 TENANT_TABLES = {

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import CoverageLevel, Market, WaitlistEntry
-from app.monitoring import market_series
+from app.monitoring import latest_floor, market_series
 
 router = APIRouter(prefix="/api/public", tags=["public"])
 
@@ -28,12 +28,20 @@ class MarketPreviewDay(BaseModel):
     occupancy: float | None
 
 
+class MarketFloor(BaseModel):
+    source: str
+    min_price: Decimal
+    median_price: Decimal
+    sample_size: int
+
+
 class MarketPreview(BaseModel):
     market_slug: str
     market_name: str
     currency_code: str
     coverage_level: CoverageLevel
     days: list[MarketPreviewDay]
+    floor: MarketFloor | None  # "minimum rynku" z nocowanie.pl (bezdatowe)
 
 
 class WaitlistRequest(BaseModel):
@@ -62,6 +70,7 @@ def market_preview(market_slug: str, db: DbSession, days: int = 30) -> MarketPre
     """Lead magnet "zobacz swój rynek" (§5.1): agregaty rynkowe, bez logowania."""
     market = _get_market(db, market_slug)
     series = market_series(db, market, days=days)
+    floor = latest_floor(db, market)
     return MarketPreview(
         market_slug=market.slug,
         market_name=market.name,
@@ -75,6 +84,16 @@ def market_preview(market_slug: str, db: DbSession, days: int = 30) -> MarketPre
             )
             for day in series
         ],
+        floor=(
+            MarketFloor(
+                source=floor.source,
+                min_price=floor.min_price,
+                median_price=floor.median_price,
+                sample_size=floor.sample_size,
+            )
+            if floor is not None
+            else None
+        ),
     )
 
 

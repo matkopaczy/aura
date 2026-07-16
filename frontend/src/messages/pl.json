@@ -16,6 +16,7 @@
     "selectMarket": "Wybierz rynek",
     "show": "Pokaż rynek",
     "avgMedian": "Średnia mediana (30 dni)",
+    "floorLine": "Najtańszy dostępny w okolicy: {min} {currency} (z {sample} obiektów, nocowanie.pl)",
     "coverageRecommendations": "Pełne rekomendacje dostępne",
     "coverageMonitoring": "Na razie tylko monitoring — zapisz się, powiadomimy o starcie rekomendacji",
     "waitlistEmail": "Twój e-mail",

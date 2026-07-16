@@ -102,6 +102,15 @@ export default function HomePage() {
               <strong>{t("avgMedian")}:</strong>{" "}
               {avg !== null ? `${avg} ${preview.currency_code}` : "—"}
             </p>
+            {preview.floor !== null && (
+              <p>
+                {t("floorLine", {
+                  min: Number(preview.floor.min_price).toFixed(0),
+                  currency: preview.currency_code,
+                  sample: preview.floor.sample_size,
+                })}
+              </p>
+            )}
             {preview.coverage_level === "recommendations" ? (
               <p>{t("coverageRecommendations")}</p>
             ) : (

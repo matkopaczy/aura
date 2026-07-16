@@ -219,12 +219,20 @@ export interface MarketPreviewDay {
   occupancy: number | null;
 }
 
+export interface MarketFloor {
+  source: string;
+  min_price: string;
+  median_price: string;
+  sample_size: number;
+}
+
 export interface MarketPreview {
   market_slug: string;
   market_name: string;
   currency_code: string;
   coverage_level: "monitoring" | "recommendations";
   days: MarketPreviewDay[];
+  floor: MarketFloor | null;
 }
 
 export const getPublicMarkets = () => request<PublicMarket[]>("/api/public/markets");

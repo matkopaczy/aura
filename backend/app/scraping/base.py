@@ -72,3 +72,27 @@ def get_adapter(source: str) -> SourceAdapter:
     if source not in adapters:
         raise KeyError(f"Brak adaptera dla źródła: {source}")
     return adapters[source]()
+
+
+@dataclass(frozen=True)
+class FloorListing:
+    """Obiekt ze źródła bez cen per-data — cena "od X zł" (bezdatowa)."""
+
+    source_listing_id: str
+    from_price: Decimal
+    currency_code: str
+    name: str | None = None
+    rating: Decimal | None = None
+    distance_center_km: Decimal | None = None
+
+
+class FloorAdapter(ABC):
+    """Adapter źródła "minimum rynku" (§6.4): tylko publiczny listing, bez cen
+    per-data (te bywają za zabronionym w robots.txt endpointem). Osobny typ
+    od SourceAdapter, bo kształt danych jest inny (§11 — bez wciskania na siłę)."""
+
+    source: str
+
+    @abstractmethod
+    def fetch_floor(self, market: Market) -> list[FloorListing]:
+        """Publiczny listing rynku → ceny "od" i metadane obiektów."""

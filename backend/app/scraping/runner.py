@@ -7,15 +7,48 @@ Obiekt znany rynkowi, ale nieobecny w wynikach dla danej daty = niedostępny.
 
 import datetime
 import logging
+import statistics
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CompetitorListing, Market, PriceObservation
-from app.scraping.base import DayObservation, SourceAdapter, get_adapter
+from app.models import CompetitorListing, FloorSignal, Market, PriceObservation
+from app.scraping.base import DayObservation, FloorAdapter, SourceAdapter, get_adapter
 
 logger = logging.getLogger(__name__)
+
+
+def scrape_market_floor(db: Session, market: Market, adapter: FloorAdapter) -> int:
+    """Sygnał "minimum rynku" ze źródła bezdatowego (np. nocowanie.pl).
+
+    Agreguje ceny "od" do min + mediany + liczby próbek i zapisuje JEDEN wiersz
+    FloorSignal. Świadomie osobne od price_observations (per-data) — §6.4/§11.
+    Zwraca liczbę obiektów w próbce (0 = nic nie zapisano).
+    """
+    listings = adapter.fetch_floor(market)
+    prices = [float(item.from_price) for item in listings]
+    if not prices:
+        logger.info("floor %s/%s: pusta próbka", market.slug, adapter.source)
+        return 0
+    db.add(
+        FloorSignal(
+            market_id=market.id,
+            source=adapter.source,
+            min_price=Decimal(str(min(prices))),
+            median_price=Decimal(str(statistics.median(prices))),
+            sample_size=len(prices),
+            currency_code=market.currency_code,
+            observed_at=datetime.datetime.now(datetime.UTC),
+        )
+    )
+    db.commit()
+    logger.info(
+        "floor %s/%s: min=%s mediana=%s próbka=%d",
+        market.slug, adapter.source, min(prices), statistics.median(prices), len(prices),
+    )
+    return len(prices)
 
 
 def stay_dates_for_market(market: Market, days_ahead: int) -> list[datetime.date]:

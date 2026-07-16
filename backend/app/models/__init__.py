@@ -3,6 +3,7 @@ from app.models.base import Base
 from app.models.billing import ReportKind, ReportSent, Subscription, SubscriptionStatus
 from app.models.calendar import CalendarDay
 from app.models.competitor import CompetitorListing, PriceObservation
+from app.models.floor import FloorSignal
 from app.models.market import CoverageLevel, CurationStatus, Event, Market
 from app.models.property import Property, PropertyType
 from app.models.recommendation import Recommendation, RecommendationStatus
@@ -16,6 +17,7 @@ __all__ = [
     "CoverageLevel",
     "CurationStatus",
     "Event",
+    "FloorSignal",
     "Market",
     "PriceObservation",
     "Property",

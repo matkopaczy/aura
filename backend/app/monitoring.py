@@ -14,7 +14,33 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CompetitorListing, Market, PriceObservation
+from app.models import CompetitorListing, FloorSignal, Market, PriceObservation
+
+
+@dataclass(frozen=True)
+class FloorView:
+    source: str
+    min_price: Decimal
+    median_price: Decimal
+    sample_size: int
+
+
+def latest_floor(db: Session, market: Market) -> FloorView | None:
+    """Najnowszy sygnał "minimum rynku" (nocowanie.pl) — None jeśli brak."""
+    signal = db.scalar(
+        select(FloorSignal)
+        .where(FloorSignal.market_id == market.id)
+        .order_by(FloorSignal.observed_at.desc())
+        .limit(1)
+    )
+    if signal is None:
+        return None
+    return FloorView(
+        source=signal.source,
+        min_price=signal.min_price,
+        median_price=signal.median_price,
+        sample_size=signal.sample_size,
+    )
 
 
 @dataclass(frozen=True)

@@ -25,6 +25,8 @@ def run_market_scrape(market_id) -> None:
 
     from app.alerts import send_spike_alerts
     from app.config import get_settings
+    from app.scraping.nocowanie import NocowanieAdapter
+    from app.scraping.runner import scrape_market_floor
 
     with Session(get_engine()) as db:
         market = db.get(Market, market_id)
@@ -32,6 +34,11 @@ def run_market_scrape(market_id) -> None:
             raise ValueError(f"Rynek {market_id} nie istnieje")
         count = scrape_market(db, market)
         logger.info("Zakończono scraping %s: %d obserwacji", market.slug, count)
+        # Sygnał "minimum rynku" z nocowanie.pl (bezdatowy, §6.4) — best effort.
+        try:
+            scrape_market_floor(db, market, NocowanieAdapter())
+        except Exception:  # floor to sygnał pomocniczy — nie wywala głównego przebiegu
+            logger.exception("floor scrape nieudany dla %s", market.slug)
         if get_settings().smtp_host:
             send_spike_alerts(db, market)
 
