@@ -29,6 +29,41 @@ export interface TokenResponse {
   token_type: string;
 }
 
+export interface Me {
+  id: string;
+  email: string;
+  account_id: string;
+  locale: string;
+  role: "owner" | "reception";
+  is_curator: boolean;
+}
+
+export const getMe = () => request<Me>("/api/auth/me");
+
+export interface TeamMember {
+  id: string;
+  email: string;
+  role: "owner" | "reception";
+}
+
+export const getTeam = () => request<TeamMember[]>("/api/account/users");
+
+export const addReception = (email: string, password: string) =>
+  request<TeamMember>("/api/account/users", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+
+export async function removeTeamMember(id: string): Promise<void> {
+  const token =
+    typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+  const response = await fetch(`${API_URL}/api/account/users/${id}`, {
+    method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new ApiError(response.status, "delete_failed");
+}
+
 export function login(email: string, password: string): Promise<TokenResponse> {
   return request("/api/auth/login", {
     method: "POST",

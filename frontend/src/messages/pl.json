@@ -79,6 +79,20 @@
     "settings": "Ustawienia",
     "logout": "Wyloguj"
   },
+  "team": {
+    "title": "Zespół",
+    "roleOwner": "właściciel",
+    "roleReception": "recepcja",
+    "addTitle": "Dodaj pracownika recepcji",
+    "email": "E-mail",
+    "password": "Hasło (min. 10 znaków)",
+    "add": "Dodaj recepcję",
+    "remove": "Usuń",
+    "emailTaken": "Ten e-mail jest już zajęty.",
+    "error": "Nie udało się. Spróbuj ponownie.",
+    "hint": "Recepcja może tylko akceptować i odrzucać dzienne rekomendacje — nie widzi rozliczeń ani nie zmienia cen minimalnych."
+  },
+  "ownerOnly": "Ta sekcja jest dostępna tylko dla właściciela konta.",
   "dashboard": {
     "title": "Panel",
     "property": "Obiekt",

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.deps import CurrentUser
+from app.auth.deps import OwnerUser
 from app.billing import cancel, view
 from app.db import get_db
 from app.models import Subscription, SubscriptionStatus
@@ -38,7 +38,7 @@ def _current_subscription(db: Session, account_id) -> Subscription:
 
 
 @router.get("/subscription", response_model=SubscriptionResponse)
-def get_subscription(user: CurrentUser, db: DbSession) -> SubscriptionResponse:
+def get_subscription(user: OwnerUser, db: DbSession) -> SubscriptionResponse:
     subscription = _current_subscription(db, user.account_id)
     v = view(subscription)
     return SubscriptionResponse(
@@ -52,7 +52,7 @@ def get_subscription(user: CurrentUser, db: DbSession) -> SubscriptionResponse:
 
 
 @router.post("/cancel", response_model=SubscriptionResponse)
-def cancel_subscription(user: CurrentUser, db: DbSession) -> SubscriptionResponse:
+def cancel_subscription(user: OwnerUser, db: DbSession) -> SubscriptionResponse:
     subscription = _current_subscription(db, user.account_id)
     cancel(db, subscription)
     v = view(subscription)

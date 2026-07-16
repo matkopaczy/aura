@@ -1,4 +1,4 @@
-from app.models.account import Account, User
+from app.models.account import Account, User, UserRole
 from app.models.base import Base
 from app.models.billing import ReportKind, ReportSent, Subscription, SubscriptionStatus
 from app.models.calendar import CalendarDay
@@ -29,5 +29,6 @@ __all__ = [
     "Subscription",
     "SubscriptionStatus",
     "User",
+    "UserRole",
     "WaitlistEntry",
 ]

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.deps import CurrentUser
+from app.auth.deps import CurrentUser, OwnerUser
 from app.db import get_db
 from app.models import Market, Property, PropertyType
 
@@ -58,7 +58,7 @@ def _to_response(prop: Property, market: Market) -> PropertyResponse:
 
 
 @router.post("", response_model=PropertyResponse, status_code=status.HTTP_201_CREATED)
-def create_property(body: PropertyCreate, user: CurrentUser, db: DbSession) -> PropertyResponse:
+def create_property(body: PropertyCreate, user: OwnerUser, db: DbSession) -> PropertyResponse:
     market = db.scalar(select(Market).where(Market.slug == body.market_slug))
     if market is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="market_not_found")
@@ -95,7 +95,7 @@ class PropertyUpdate(BaseModel):
 
 @router.patch("/{property_id}", response_model=PropertyResponse)
 def update_property(
-    property_id: uuid.UUID, body: PropertyUpdate, user: CurrentUser, db: DbSession
+    property_id: uuid.UUID, body: PropertyUpdate, user: OwnerUser, db: DbSession
 ) -> PropertyResponse:
     prop = db.scalar(
         select(Property).where(

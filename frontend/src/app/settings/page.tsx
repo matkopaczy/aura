@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ApiError, Property, getProperties, updateProperty } from "@/lib/api";
+import { ApiError, Me, Property, getMe, getProperties, updateProperty } from "@/lib/api";
 import AccountSection from "@/components/AccountSection";
+import TeamSection from "@/components/TeamSection";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
   const to = useTranslations("onboarding");
+  const tRoot = useTranslations();
+  const [me, setMe] = useState<Me | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [propertyId, setPropertyId] = useState("");
   const [form, setForm] = useState({
@@ -29,13 +32,20 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    getMe()
+      .then(setMe)
+      .catch((e) => handleError(e, "loadError"));
+  }, [handleError]);
+
+  useEffect(() => {
+    if (me?.role !== "owner") return; // recepcja nie ładuje ustawień właściciela
     getProperties()
       .then((list) => {
         setProperties(list);
         if (list.length > 0) setPropertyId(list[0].id);
       })
       .catch((e) => handleError(e, "loadError"));
-  }, [handleError]);
+  }, [me, handleError]);
 
   useEffect(() => {
     const prop = properties.find((p) => p.id === propertyId);
@@ -66,6 +76,15 @@ export default function SettingsPage() {
     } catch (e) {
       handleError(e, "saveError");
     }
+  }
+
+  if (me !== null && me.role !== "owner") {
+    return (
+      <main>
+        <h1>{t("title")}</h1>
+        <p>{tRoot("ownerOnly")}</p>
+      </main>
+    );
   }
 
   return (
@@ -126,6 +145,7 @@ export default function SettingsPage() {
           <button type="submit">{t("save")}</button>
         </form>
       )}
+      <TeamSection />
       <AccountSection />
     </main>
   );

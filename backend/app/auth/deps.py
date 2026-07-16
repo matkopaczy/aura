@@ -47,3 +47,15 @@ def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def require_owner(user: CurrentUser) -> User:
+    """Dostęp tylko dla właściciela konta (ceny, rozliczenia, zespół — § role)."""
+    from app.models import UserRole
+
+    if user.role != UserRole.OWNER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="owner_required")
+    return user
+
+
+OwnerUser = Annotated[User, Depends(require_owner)]

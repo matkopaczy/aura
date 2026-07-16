@@ -37,6 +37,8 @@ class MeResponse(BaseModel):
     email: str
     account_id: str
     locale: str
+    role: str
+    is_curator: bool
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -74,4 +76,6 @@ def me(user: CurrentUser) -> MeResponse:
         email=user.email,
         account_id=str(user.account_id),
         locale=user.locale,
+        role=user.role,
+        is_curator=user.is_curator,
     )
