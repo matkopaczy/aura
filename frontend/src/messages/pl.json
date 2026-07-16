@@ -1,0 +1,23 @@
+{
+  "common": {
+    "appName": "Aura",
+    "loading": "Wczytywanie…"
+  },
+  "home": {
+    "title": "Ceny na poziomie operatora. Bez oddawania prowizji.",
+    "subtitle": "Podpowiadamy, jaką cenę ustawić na każdy dzień — i tłumaczymy dlaczego. Po polsku, z lokalnym kontekstem.",
+    "cta": "Zaloguj się"
+  },
+  "login": {
+    "title": "Logowanie",
+    "email": "E-mail",
+    "password": "Hasło",
+    "submit": "Zaloguj się",
+    "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+    "genericError": "Coś poszło nie tak. Spróbuj ponownie."
+  },
+  "dashboard": {
+    "title": "Panel",
+    "signedInAs": "Zalogowano jako {email}"
+  }
+}
