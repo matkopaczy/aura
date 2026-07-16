@@ -160,6 +160,23 @@ def test_event_far_from_venue_decays_to_floor():
     assert ev.params["venue_distance_km"] > 6.0
 
 
+def test_orphan_night_discounts():
+    # wtorek, w paśmie mediany -> tylko sierota decyduje
+    draft = compute_recommendation(
+        _property(), TUESDAY, _day(Decimal("200")), [], is_orphan=True
+    )
+    keys = {f.key for f in draft.factors}
+    assert keys == {"orphan_night"}
+    assert draft.price < Decimal("200")
+
+
+def test_not_orphan_no_factor():
+    draft = compute_recommendation(
+        _property(), TUESDAY, _day(Decimal("200")), [], is_orphan=False
+    )
+    assert all(f.key != "orphan_night" for f in draft.factors)
+
+
 def test_booking_pace_up_adds_uplift():
     # wtorek poza sezonem, w paśmie mediany -> tylko pace decyduje
     draft = compute_recommendation(

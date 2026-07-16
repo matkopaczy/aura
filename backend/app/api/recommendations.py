@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.auth.deps import CurrentUser
 from app.db import get_db
 from app.engine import compute_recommendation
+from app.ical import booked_dates, is_orphan_night
 from app.models import (
     CoverageLevel,
     CurationStatus,
@@ -108,12 +109,24 @@ def generate_for_property(db: Session, prop: Property, days: int = 60) -> list[R
         )
     }
 
+    # Kalendarz gospodarza (iCal): nie rekomendujemy nocy już sprzedanych,
+    # a wolne noce między rezerwacjami dostają rabat (§ czynniki).
+    booked = booked_dates(db, prop.id)
+
     result: list[Recommendation] = []
     for day in series:
-        draft = compute_recommendation(prop, day.stay_date, day, events)
         rec = existing.get(day.stay_date)
         if rec is not None and rec.status != RecommendationStatus.PENDING:
             continue  # decyzja klienta zapadła — stan zostaje pod atrybucję
+        if day.stay_date in booked:
+            # Noc już zarezerwowana — brak sensownej rekomendacji; stary pending wygasa.
+            if rec is not None:
+                rec.status = RecommendationStatus.EXPIRED
+            continue
+        draft = compute_recommendation(
+            prop, day.stay_date, day, events,
+            is_orphan=is_orphan_night(day.stay_date, booked),
+        )
         if rec is None:
             rec = Recommendation(
                 account_id=prop.account_id,

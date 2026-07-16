@@ -18,6 +18,21 @@ logger = logging.getLogger(__name__)
 
 SYNC_HORIZON_DAYS = 400
 
+_ONE_DAY = datetime.timedelta(days=1)
+
+
+def booked_dates(db: Session, property_id) -> set[datetime.date]:
+    """Zajęte noce obiektu z importu iCal (calendar_days)."""
+    return set(
+        db.scalars(select(CalendarDay.stay_date).where(CalendarDay.property_id == property_id))
+    )
+
+
+def is_orphan_night(day: datetime.date, booked: set[datetime.date]) -> bool:
+    """Noc-sierota: wolna, ale otoczona rezerwacjami z obu stron —
+    trudna do sprzedania osobno, warta rabatu, by wypełnić lukę (§ czynniki)."""
+    return day not in booked and (day - _ONE_DAY) in booked and (day + _ONE_DAY) in booked
+
 
 def busy_days_from_ical(ical_text: str) -> set[datetime.date]:
     calendar = Calendar.from_ical(ical_text)

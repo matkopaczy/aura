@@ -1,8 +1,65 @@
 import datetime
+import uuid
 from decimal import Decimal
 
+from sqlalchemy import select
+
+from app.models import CalendarDay, Property, Recommendation, RecommendationStatus
+from app.models.base import utcnow
 from tests.test_api_sprint2 import PROPERTY_BODY, _register, _seed_market
 from tests.test_monitoring import _listing, _obs
+
+
+def _book(db, prop_id, day):
+    prop = db.get(Property, uuid.UUID(prop_id))
+    db.add(CalendarDay(
+        account_id=prop.account_id, property_id=prop.id, stay_date=day, synced_at=utcnow(),
+    ))
+    db.commit()
+
+
+def test_ical_booked_nights_skipped_and_orphan_discounted(client, db_session):
+    _seed_market(db_session)
+    headers = _register(client)
+    prop_id = client.post("/api/properties", json=PROPERTY_BODY, headers=headers).json()["id"]
+
+    base = datetime.date.today() + datetime.timedelta(days=10)
+    # rezerwacje: base i base+2 zajęte -> base+1 to noc-sierota
+    _book(db_session, prop_id, base)
+    _book(db_session, prop_id, base + datetime.timedelta(days=2))
+
+    recs = client.post(
+        f"/api/recommendations/{prop_id}/generate?days=20", headers=headers
+    ).json()
+    by_date = {r["stay_date"]: r for r in recs}
+
+    # zarezerwowane noce pominięte
+    assert base.isoformat() not in by_date
+    assert (base + datetime.timedelta(days=2)).isoformat() not in by_date
+    # sierota obecna, z czynnikiem orphan_night
+    orphan = by_date[(base + datetime.timedelta(days=1)).isoformat()]
+    keys = [f["key"] for f in orphan["explanation_params"]["factors"]]
+    assert "orphan_night" in keys
+    # rabat: sierota tańsza niż zwykła wolna noc (te same pozostałe czynniki)
+    regular = by_date[(base + datetime.timedelta(days=5)).isoformat()]
+    assert Decimal(orphan["recommended_price"]) < Decimal(regular["recommended_price"])
+
+
+def test_booked_night_expires_existing_pending(client, db_session):
+    _seed_market(db_session)
+    headers = _register(client)
+    prop_id = client.post("/api/properties", json=PROPERTY_BODY, headers=headers).json()["id"]
+    target = datetime.date.today() + datetime.timedelta(days=5)
+
+    client.post(f"/api/recommendations/{prop_id}/generate?days=10", headers=headers)
+    # noc się sprzedała po pierwszym przebiegu
+    _book(db_session, prop_id, target)
+    client.post(f"/api/recommendations/{prop_id}/generate?days=10", headers=headers)
+
+    rec = db_session.scalar(
+        select(Recommendation).where(Recommendation.stay_date == target)
+    )
+    assert rec.status == RecommendationStatus.EXPIRED
 
 
 def _setup(client, db_session):

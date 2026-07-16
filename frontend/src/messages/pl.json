@@ -176,7 +176,8 @@
     "booking_pace_up": "rynek szybko zapełnia się na ten termin",
     "booking_pace_down": "rynek zwalnia na ten termin",
     "below_median": "jesteś {positionPct}% poniżej mediany rynku",
-    "above_median": "jesteś {positionPct}% powyżej mediany rynku"
+    "above_median": "jesteś {positionPct}% powyżej mediany rynku",
+    "orphan_night": "wolna noc między rezerwacjami — obniż, by ją wypełnić"
   },
   "curation": {
     "title": "Kuracja bazy wydarzeń",

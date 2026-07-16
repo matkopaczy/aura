@@ -23,5 +23,6 @@
   "factor.booking_pace_up": "rynek szybko się zapełnia",
   "factor.booking_pace_down": "rynek zwalnia",
   "factor.below_median": "{positionPct}% poniżej mediany",
-  "factor.above_median": "{positionPct}% powyżej mediany"
+  "factor.above_median": "{positionPct}% powyżej mediany",
+  "factor.orphan_night": "wolna noc między rezerwacjami"
 }

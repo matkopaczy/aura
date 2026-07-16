@@ -33,6 +33,7 @@ OCCUPANCY_LOW_THRESHOLD, OCCUPANCY_LOW_MULTIPLIER = 0.2, 0.95
 # Rynek szybko się zapełnia -> podnieś wcześniej; zwalnia -> odpuść.
 PACE_UP_THRESHOLD, PACE_UP_MULTIPLIER = 0.10, 1.08
 PACE_DOWN_THRESHOLD, PACE_DOWN_MULTIPLIER = -0.10, 0.96
+ORPHAN_MULTIPLIER = 0.92  # wolna noc między rezerwacjami — rabat, by wypełnić lukę
 POSITION_WEIGHT = 0.5  # domykamy połowę dystansu do mediany
 POSITION_MIN, POSITION_MAX = -0.10, 0.15
 POSITION_DEADBAND = 0.05  # ±5% od mediany = bez korekty
@@ -151,11 +152,18 @@ def _position_factor(base_price: Decimal, median: Decimal | None) -> Factor | No
     return Factor(key, 1 + adjustment, {"position": round(position, 2)})
 
 
+def _orphan_night_factor(is_orphan: bool) -> Factor | None:
+    if not is_orphan:
+        return None
+    return Factor("orphan_night", ORPHAN_MULTIPLIER, {})
+
+
 def compute_recommendation(
     prop: Property,
     stay_date: datetime.date,
     market_day: MarketDay | None,
     events: list[Event],
+    is_orphan: bool = False,
 ) -> RecommendationDraft:
     if prop.base_price is None:
         raise ValueError(f"Obiekt {prop.id} nie ma ceny bazowej — wymagana dla rekomendacji")
@@ -171,6 +179,7 @@ def compute_recommendation(
         _occupancy_factor(occupancy),
         _booking_pace_factor(pace),
         _position_factor(prop.base_price, median),
+        _orphan_night_factor(is_orphan),
     ]
     factors = [f for f in candidates if f is not None]
 

@@ -3,8 +3,20 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
-from app.ical import busy_days_from_ical
+from app.ical import busy_days_from_ical, is_orphan_night
 from app.models import Account, CalendarDay, CoverageLevel, Market, Property, PropertyType
+
+
+def test_is_orphan_night():
+    d = datetime.date(2026, 8, 15)
+    booked = {datetime.date(2026, 8, 14), datetime.date(2026, 8, 16)}
+    assert is_orphan_night(d, booked) is True  # wolna, otoczona z obu stron
+    # brak sąsiada z jednej strony -> nie sierota
+    assert is_orphan_night(d, {datetime.date(2026, 8, 14)}) is False
+    # sama zajęta -> nie sierota
+    assert is_orphan_night(datetime.date(2026, 8, 14), booked) is False
+    # wolna bez sąsiadów -> nie sierota
+    assert is_orphan_night(d, set()) is False
 
 AIRBNB_STYLE_ICAL = """BEGIN:VCALENDAR
 PRODID:-//Airbnb Inc//Hosting Calendar 1.0//EN
