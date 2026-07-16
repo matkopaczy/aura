@@ -23,3 +23,5 @@ class User(Base, TenantMixin, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     locale: Mapped[str] = mapped_column(String(10), default="pl", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Kurator bazy eventów — funkcja wewnętrzna platformy (założyciel), nie klienta.
+    is_curator: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

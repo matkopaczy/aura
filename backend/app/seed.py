@@ -1,10 +1,14 @@
-"""Seed tabeli markets — rynek jako dane, nie kod (§6.2 pkt 2).
+"""Seed tabel markets i events — rynek jako dane, nie kod (§6.2 pkt 2).
 
 Uruchomienie: python -m app.seed
-Idempotentny: upsert po slugu. Pierwsza fala rekomendacji (§5.1): Kraków,
-Trójmiasto, Poznań. Pozostałe miasta wojewódzkie i turystyczne: monitoring.
+Idempotentny: markets po slugu, events po (market, nazwa, data startu).
+Pierwsza fala rekomendacji (§5.1): Kraków, Trójmiasto, Poznań.
+
+Eventy: święta ustawowe i długie weekendy (daty pewne) = approved;
+festiwale/targi z niepotwierdzonymi datami = draft, do panelu kuracji.
 """
 
+import datetime
 import logging
 from decimal import Decimal
 
@@ -12,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_engine
-from app.models import CoverageLevel, Market
+from app.models import CoverageLevel, CurationStatus, Event, Market
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,6 +61,86 @@ MARKETS: list[tuple[str, str, float, float, float, CoverageLevel]] = [
 ]
 
 
+_APPROVED = CurationStatus.APPROVED
+_DRAFT = CurationStatus.DRAFT
+_D = datetime.date
+
+# Święta i długie weekendy — te same daty dla wszystkich rynków pierwszej fali.
+# (nazwa, kategoria, start, koniec, siła wpływu, status)
+NATIONAL_EVENTS: list[tuple[str, str, datetime.date, datetime.date, float, CurationStatus]] = [
+    ("Weekend z Wniebowzięciem NMP", "dlugi-weekend",
+     _D(2026, 8, 14), _D(2026, 8, 16), 0.7, _APPROVED),
+    ("Wszystkich Świętych", "swieto", _D(2026, 10, 30), _D(2026, 11, 1), 0.4, _APPROVED),
+    ("Święto Niepodległości", "swieto", _D(2026, 11, 10), _D(2026, 11, 11), 0.5, _APPROVED),
+    ("Boże Narodzenie", "swieto", _D(2026, 12, 24), _D(2026, 12, 27), 0.6, _APPROVED),
+    ("Sylwester i Nowy Rok", "dlugi-weekend",
+     _D(2026, 12, 30), _D(2027, 1, 1), 0.9, _APPROVED),
+    ("Trzech Króli", "swieto", _D(2027, 1, 5), _D(2027, 1, 6), 0.4, _APPROVED),
+    ("Wielkanoc", "swieto", _D(2027, 3, 26), _D(2027, 3, 29), 0.6, _APPROVED),
+    ("Majówka", "dlugi-weekend", _D(2027, 4, 30), _D(2027, 5, 3), 0.95, _APPROVED),
+    ("Boże Ciało — długi weekend", "dlugi-weekend",
+     _D(2027, 5, 26), _D(2027, 5, 30), 0.85, _APPROVED),
+]
+
+# Eventy lokalne — daty 2026/27 do potwierdzenia przez kuratora (draft).
+# (market_slug, nazwa, kategoria, dzielnica, start, koniec, siła, status)
+CITY_EVENTS: list[tuple] = [
+    ("krakow", "Unsound Festival", "festiwal", None,
+     _D(2026, 10, 4), _D(2026, 10, 11), 0.6, _DRAFT),
+    ("krakow", "Jarmark Bożonarodzeniowy", "jarmark", "Stare Miasto",
+     _D(2026, 11, 27), _D(2026, 12, 26), 0.5, _DRAFT),
+    ("krakow", "Juwenalia", "juwenalia", None,
+     _D(2027, 5, 13), _D(2027, 5, 16), 0.5, _DRAFT),
+    ("krakow", "Wianki", "festiwal", "Stare Miasto",
+     _D(2027, 6, 19), _D(2027, 6, 19), 0.6, _DRAFT),
+    ("poznan", "Poznań Game Arena", "targi", "Grunwald",
+     _D(2026, 10, 9), _D(2026, 10, 11), 0.7, _DRAFT),
+    ("poznan", "Budma", "targi", "Grunwald",
+     _D(2027, 2, 2), _D(2027, 2, 5), 0.7, _DRAFT),
+    ("poznan", "Malta Festival", "festiwal", None,
+     _D(2027, 6, 18), _D(2027, 6, 27), 0.6, _DRAFT),
+    ("trojmiasto", "Jarmark św. Dominika", "jarmark", "Gdańsk Śródmieście",
+     _D(2026, 7, 25), _D(2026, 8, 16), 0.7, _DRAFT),
+    ("trojmiasto", "Jarmark Bożonarodzeniowy", "jarmark", "Gdańsk Śródmieście",
+     _D(2026, 11, 20), _D(2026, 12, 23), 0.5, _DRAFT),
+    ("trojmiasto", "Open'er Festival", "festiwal", "Gdynia",
+     _D(2027, 6, 30), _D(2027, 7, 3), 0.9, _DRAFT),
+]
+
+FIRST_WAVE_SLUGS = ["krakow", "trojmiasto", "poznan"]
+
+
+def seed_events(db: Session) -> None:
+    markets = {m.slug: m for m in db.scalars(select(Market))}
+    existing = {
+        (e.market_id, e.name, e.start_date) for e in db.scalars(select(Event))
+    }
+    created = 0
+
+    def add(market: Market, name: str, category: str, district: str | None,
+            start: datetime.date, end: datetime.date, impact: float,
+            status: CurationStatus) -> None:
+        nonlocal created
+        if (market.id, name, start) in existing:
+            return
+        db.add(Event(
+            market_id=market.id, name=name, category=category, district=district,
+            start_date=start, end_date=end, impact_strength=impact,
+            source="kurator-seed", curation_status=status,
+        ))
+        created += 1
+
+    for slug in FIRST_WAVE_SLUGS:
+        market = markets[slug]
+        for name, category, start, end, impact, status in NATIONAL_EVENTS:
+            add(market, name, category, None, start, end, impact, status)
+    for slug, name, category, district, start, end, impact, status in CITY_EVENTS:
+        add(markets[slug], name, category, district, start, end, impact, status)
+
+    db.commit()
+    logger.info("Seed eventów: %d nowych", created)
+
+
 def seed_markets(db: Session) -> None:
     existing = {m.slug: m for m in db.scalars(select(Market))}
     created = 0
@@ -89,3 +173,4 @@ if __name__ == "__main__":
 
     with _Session(get_engine()) as session:
         seed_markets(session)
+        seed_events(session)

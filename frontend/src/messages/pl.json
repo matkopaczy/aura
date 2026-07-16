@@ -19,5 +19,37 @@
   "dashboard": {
     "title": "Panel",
     "signedInAs": "Zalogowano jako {email}"
+  },
+  "monitoring": {
+    "title": "Monitoring rynku",
+    "selectMarket": "Rynek",
+    "date": "Data",
+    "median": "Mediana rynku",
+    "sample": "Próbka",
+    "occupancy": "Obłożenie okolicy",
+    "noData": "brak danych",
+    "upcomingEvents": "Nadchodzące wydarzenia",
+    "noEvents": "Brak zatwierdzonych wydarzeń dla tego rynku.",
+    "loadError": "Nie udało się pobrać danych. Spróbuj ponownie."
+  },
+  "curation": {
+    "title": "Kuracja bazy wydarzeń",
+    "name": "Nazwa",
+    "category": "Kategoria",
+    "district": "Dzielnica (opcjonalnie)",
+    "dates": "Termin",
+    "impact": "Siła wpływu (0–1)",
+    "status": "Status",
+    "statusDraft": "szkic",
+    "statusApproved": "zatwierdzony",
+    "statusRejected": "odrzucony",
+    "approve": "Zatwierdź",
+    "reject": "Odrzuć",
+    "addTitle": "Dodaj wydarzenie",
+    "startDate": "Od",
+    "endDate": "Do",
+    "submit": "Dodaj",
+    "forbidden": "To konto nie ma uprawnień kuratora.",
+    "loadError": "Nie udało się pobrać danych. Spróbuj ponownie."
   }
 }

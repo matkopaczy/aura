@@ -1,0 +1,102 @@
+import datetime
+from decimal import Decimal
+
+from app.models import (
+    CompetitorListing,
+    CoverageLevel,
+    Market,
+    PriceObservation,
+)
+from app.monitoring import market_series, price_position
+
+
+def _market(db) -> Market:
+    market = Market(
+        slug="poznan",
+        name="Poznań",
+        country_code="PL",
+        currency_code="PLN",
+        timezone="Europe/Warsaw",
+        language="pl",
+        coverage_level=CoverageLevel.RECOMMENDATIONS,
+        center_lat=Decimal("52.4064"),
+        center_lng=Decimal("16.9252"),
+        radius_km=Decimal("12.0"),
+    )
+    db.add(market)
+    db.commit()
+    return market
+
+
+def _listing(db, market, sid) -> CompetitorListing:
+    listing = CompetitorListing(market_id=market.id, source="booking", source_listing_id=sid)
+    db.add(listing)
+    db.flush()
+    return listing
+
+
+def _obs(db, listing, stay_date, price, available=True, hours=0):
+    db.add(
+        PriceObservation(
+            listing_id=listing.id,
+            stay_date=stay_date,
+            price=price,
+            currency_code="PLN",
+            available=available,
+            observed_at=datetime.datetime(2026, 7, 16, hours, 0, tzinfo=datetime.UTC),
+            source="booking",
+        )
+    )
+
+
+def test_market_series_median_uses_latest_observation_per_listing(db_session):
+    market = _market(db_session)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    l1 = _listing(db_session, market, "pl/a")
+    l2 = _listing(db_session, market, "pl/b")
+    l3 = _listing(db_session, market, "pl/c")
+    # l1: stara obserwacja 100, nowsza 300 — liczy się 300
+    _obs(db_session, l1, tomorrow, Decimal("100"), hours=1)
+    _obs(db_session, l1, tomorrow, Decimal("300"), hours=5)
+    _obs(db_session, l2, tomorrow, Decimal("200"), hours=1)
+    _obs(db_session, l3, tomorrow, Decimal("400"), hours=1)
+    db_session.commit()
+
+    series = market_series(db_session, market, days=1)
+    assert len(series) == 1
+    day = series[0]
+    assert day.stay_date == tomorrow
+    assert day.median_price == Decimal("300")
+    assert day.sample_size == 3
+    assert day.occupancy is None  # brak danych o niedostępności
+
+
+def test_market_series_occupancy_from_unavailable_rows(db_session):
+    market = _market(db_session)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    l1 = _listing(db_session, market, "pl/a")
+    l2 = _listing(db_session, market, "pl/b")
+    l3 = _listing(db_session, market, "pl/c")
+    l4 = _listing(db_session, market, "pl/d")
+    _obs(db_session, l1, tomorrow, Decimal("100"))
+    _obs(db_session, l2, tomorrow, Decimal("200"))
+    _obs(db_session, l3, tomorrow, Decimal("300"))
+    _obs(db_session, l4, tomorrow, None, available=False)
+    db_session.commit()
+
+    day = market_series(db_session, market, days=1)[0]
+    assert day.sample_size == 3
+    assert day.occupancy == 0.25
+    assert day.median_price == Decimal("200")
+
+
+def test_market_series_empty_market(db_session):
+    market = _market(db_session)
+    series = market_series(db_session, market, days=3)
+    assert len(series) == 3
+    assert all(d.median_price is None and d.sample_size == 0 for d in series)
+
+
+def test_price_position():
+    assert price_position(Decimal("170"), Decimal("200")) == -0.15
+    assert price_position(Decimal("220"), Decimal("200")) == 0.1
