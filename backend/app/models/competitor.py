@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     UniqueConstraint,
@@ -40,6 +41,8 @@ class CompetitorListing(Base, TimestampMixin):
     rating: Mapped[Decimal | None] = mapped_column(Numeric(3, 1))
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6))
     lng: Mapped[float | None] = mapped_column(Numeric(9, 6))
+    # Lokalizacja ogólna z wyników wyszukiwania (gdy brak współrzędnych).
+    distance_center_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     amenities: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
 
@@ -51,7 +54,10 @@ class PriceObservation(Base):
         Index("ix_price_obs_listing_stay", "listing_id", "stay_date", "observed_at"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # Wariant dla SQLite (testy): tylko INTEGER PRIMARY KEY dostaje autoinkrement.
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
     listing_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("competitor_listings.id"), nullable=False
     )
