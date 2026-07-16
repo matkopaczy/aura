@@ -85,6 +85,39 @@ def create_property(body: PropertyCreate, user: CurrentUser, db: DbSession) -> P
     return _to_response(prop, market)
 
 
+class PropertyUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    base_price: Decimal | None = Field(default=None, gt=0)
+    min_price: Decimal | None = Field(default=None, gt=0)
+    max_price: Decimal | None = Field(default=None, gt=0)
+    ical_url: HttpUrl | None = None
+
+
+@router.patch("/{property_id}", response_model=PropertyResponse)
+def update_property(
+    property_id: uuid.UUID, body: PropertyUpdate, user: CurrentUser, db: DbSession
+) -> PropertyResponse:
+    prop = db.scalar(
+        select(Property).where(
+            Property.id == property_id, Property.account_id == user.account_id
+        )
+    )
+    if prop is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="property_not_found")
+    changes = body.model_dump(exclude_unset=True)
+    if "ical_url" in changes and changes["ical_url"] is not None:
+        changes["ical_url"] = str(changes["ical_url"])
+    for field, value in changes.items():
+        setattr(prop, field, value)
+    if prop.max_price is not None and prop.max_price < prop.min_price:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="max_below_min"
+        )
+    db.commit()
+    market = db.get(Market, prop.market_id)
+    return _to_response(prop, market)
+
+
 @router.get("", response_model=list[PropertyResponse])
 def list_properties(user: CurrentUser, db: DbSession) -> list[PropertyResponse]:
     rows = db.execute(

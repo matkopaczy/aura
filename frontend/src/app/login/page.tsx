@@ -16,7 +16,7 @@ export default function LoginPage() {
     try {
       const token = await login(email, password);
       sessionStorage.setItem("access_token", token.access_token);
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     } catch (e) {
       setError(e instanceof ApiError && e.status === 401 ? t("invalidCredentials") : t("genericError"));
     }

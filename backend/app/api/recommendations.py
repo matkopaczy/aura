@@ -45,6 +45,13 @@ class DecisionRequest(BaseModel):
     decision: Literal["accepted", "rejected"]
 
 
+class AttributionResponse(BaseModel):
+    accepted_count: int
+    sold_count: int
+    extra_revenue: Decimal
+    currency_code: str
+
+
 def _to_response(rec: Recommendation) -> RecommendationResponse:
     return RecommendationResponse(
         id=rec.id,
@@ -150,6 +157,23 @@ def list_recommendations(
         query = query.where(Recommendation.status == status_filter)
     recs = db.scalars(query.order_by(Recommendation.stay_date)).all()
     return [_to_response(r) for r in recs]
+
+
+@router.get("/attribution/{property_id}", response_model=AttributionResponse)
+def attribution(
+    property_id: uuid.UUID, user: CurrentUser, db: DbSession
+) -> AttributionResponse:
+    from app.attribution import summarize, update_outcomes
+
+    prop = _own_property(db, user, property_id)
+    update_outcomes(db, prop)
+    summary = summarize(db, prop)
+    return AttributionResponse(
+        accepted_count=summary.accepted_count,
+        sold_count=summary.sold_count,
+        extra_revenue=summary.extra_revenue,
+        currency_code=prop.currency_code,
+    )
 
 
 @router.post("/decision/{recommendation_id}", response_model=RecommendationResponse)

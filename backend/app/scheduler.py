@@ -23,12 +23,37 @@ logger = logging.getLogger(__name__)
 def run_market_scrape(market_id) -> None:
     from sqlalchemy.orm import Session
 
+    from app.alerts import send_spike_alerts
+    from app.config import get_settings
+
     with Session(get_engine()) as db:
         market = db.get(Market, market_id)
         if market is None:
             raise ValueError(f"Rynek {market_id} nie istnieje")
         count = scrape_market(db, market)
         logger.info("Zakończono scraping %s: %d obserwacji", market.slug, count)
+        if get_settings().smtp_host:
+            send_spike_alerts(db, market)
+
+
+def run_weekly_reports() -> None:
+    from sqlalchemy.orm import Session
+
+    from app.emails import send_weekly_reports
+
+    with Session(get_engine()) as db:
+        send_weekly_reports(db)
+
+
+def run_attribution_update() -> None:
+    from sqlalchemy.orm import Session
+
+    from app.attribution import update_outcomes
+
+    with Session(get_engine()) as db:
+        properties = db.scalars(select(Property)).all()
+        updated = sum(update_outcomes(db, prop) for prop in properties)
+        logger.info("Atrybucja: zaktualizowano %d rekomendacji", updated)
 
 
 def run_ical_sync() -> None:
@@ -61,6 +86,18 @@ def build_scheduler() -> BlockingScheduler:
         run_ical_sync,
         CronTrigger(hour=1, minute=0, timezone="UTC"),
         id="ical-sync",
+        misfire_grace_time=3600,
+    )
+    scheduler.add_job(
+        run_attribution_update,
+        CronTrigger(hour=5, minute=0, timezone="UTC"),
+        id="attribution",
+        misfire_grace_time=3600,
+    )
+    scheduler.add_job(
+        run_weekly_reports,
+        CronTrigger(day_of_week="mon", hour=7, minute=0, timezone="Europe/Warsaw"),
+        id="weekly-reports",
         misfire_grace_time=3600,
     )
     return scheduler

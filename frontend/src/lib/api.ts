@@ -103,3 +103,92 @@ export const curationCreate = (body: EventCreate) =>
     method: "POST",
     body: JSON.stringify(body),
   });
+
+export interface Property {
+  id: string;
+  market_slug: string;
+  name: string;
+  property_type: string;
+  capacity: number;
+  currency_code: string;
+  base_price: string | null;
+  min_price: string;
+  max_price: string | null;
+  ical_url: string | null;
+}
+
+export const getProperties = () => request<Property[]>("/api/properties");
+
+export const createProperty = (body: object) =>
+  request<Property>("/api/properties", { method: "POST", body: JSON.stringify(body) });
+
+export const updateProperty = (id: string, patch: object) =>
+  request<Property>(`/api/properties/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+
+export const getPropertyMonitoring = (id: string, days = 60) =>
+  request<MonitoringResponse>(`/api/monitoring/property/${id}?days=${days}`);
+
+export interface ExplanationFactor {
+  key: string;
+  pct: number;
+  name?: string;
+  impact?: number;
+  occupancy?: number;
+  position?: number;
+}
+
+export interface Recommendation {
+  id: string;
+  property_id: string;
+  stay_date: string;
+  recommended_price: string;
+  previous_price: string | null;
+  currency_code: string;
+  status: "pending" | "accepted" | "rejected" | "expired";
+  explanation_template_key: string;
+  explanation_params: { factors: ExplanationFactor[]; median: string | null };
+  decided_at: string | null;
+}
+
+export const getRecommendations = (propertyId: string) =>
+  request<Recommendation[]>(`/api/recommendations/${propertyId}`);
+
+export const generateRecommendations = (propertyId: string, days = 60) =>
+  request<Recommendation[]>(`/api/recommendations/${propertyId}/generate?days=${days}`, {
+    method: "POST",
+  });
+
+export const decideRecommendation = (id: string, decision: "accepted" | "rejected") =>
+  request<Recommendation>(`/api/recommendations/decision/${id}`, {
+    method: "POST",
+    body: JSON.stringify({ decision }),
+  });
+
+export interface Attribution {
+  accepted_count: number;
+  sold_count: number;
+  extra_revenue: string;
+  currency_code: string;
+}
+
+export const getAttribution = (propertyId: string) =>
+  request<Attribution>(`/api/recommendations/attribution/${propertyId}`);
+
+export interface ParsedListing {
+  name: string;
+  lat: number;
+  lng: number;
+  market_slug: string;
+  market_name: string;
+  currency_code: string;
+  proposed_base_price: string | null;
+}
+
+export const parseListing = (url: string) =>
+  request<ParsedListing>("/api/onboarding/parse", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
