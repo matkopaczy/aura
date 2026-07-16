@@ -36,6 +36,17 @@ export function login(email: string, password: string): Promise<TokenResponse> {
   });
 }
 
+export function register(
+  accountName: string,
+  email: string,
+  password: string,
+): Promise<TokenResponse> {
+  return request("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ account_name: accountName, email, password }),
+  });
+}
+
 export interface Market {
   slug: string;
   name: string;
@@ -192,3 +203,68 @@ export const parseListing = (url: string) =>
     method: "POST",
     body: JSON.stringify({ url }),
   });
+
+// --- Publiczne (lead magnet, bez logowania) ---
+
+export interface PublicMarket {
+  slug: string;
+  name: string;
+  coverage_level: "monitoring" | "recommendations";
+}
+
+export interface MarketPreviewDay {
+  stay_date: string;
+  median_price: string | null;
+  occupancy: number | null;
+}
+
+export interface MarketPreview {
+  market_slug: string;
+  market_name: string;
+  currency_code: string;
+  coverage_level: "monitoring" | "recommendations";
+  days: MarketPreviewDay[];
+}
+
+export const getPublicMarkets = () => request<PublicMarket[]>("/api/public/markets");
+
+export const getMarketPreview = (slug: string) =>
+  request<MarketPreview>(`/api/public/preview/${slug}`);
+
+export const joinWaitlist = (email: string, marketSlug: string) =>
+  request<{ status: string }>("/api/public/waitlist", {
+    method: "POST",
+    body: JSON.stringify({ email, market_slug: marketSlug }),
+  });
+
+// --- Abonament ---
+
+export interface Subscription {
+  status: "trialing" | "active" | "past_due" | "canceled";
+  price_per_property: string;
+  currency_code: string;
+  trial_ends_at: string | null;
+  trial_days_left: number | null;
+  is_expired: boolean;
+}
+
+export const getSubscription = () => request<Subscription>("/api/billing/subscription");
+
+export const cancelSubscription = () =>
+  request<Subscription>("/api/billing/cancel", { method: "POST" });
+
+// --- Konto (RODO) ---
+
+export const exportAccount = () => request<unknown>("/api/account/export");
+
+export async function deleteAccount(): Promise<void> {
+  const token =
+    typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+  const response = await fetch(`${API_URL}/api/account`, {
+    method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, "delete_failed");
+  }
+}

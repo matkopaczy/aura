@@ -6,6 +6,7 @@ from app.models.competitor import CompetitorListing, PriceObservation
 from app.models.market import CoverageLevel, CurationStatus, Event, Market
 from app.models.property import Property, PropertyType
 from app.models.recommendation import Recommendation, RecommendationStatus
+from app.models.waitlist import WaitlistEntry
 
 __all__ = [
     "Account",
@@ -26,4 +27,5 @@ __all__ = [
     "Subscription",
     "SubscriptionStatus",
     "User",
+    "WaitlistEntry",
 ]

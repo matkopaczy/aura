@@ -6,7 +6,63 @@
   "home": {
     "title": "Ceny na poziomie operatora. Bez oddawania prowizji.",
     "subtitle": "Podpowiadamy, jaką cenę ustawić na każdy dzień — i tłumaczymy dlaczego. Po polsku, z lokalnym kontekstem.",
-    "cta": "Zaloguj się"
+    "cta": "Zaloguj się",
+    "sell1": "49 zł/mies. zamiast 20% przychodu.",
+    "sell2": "Konfiguracja w 5 minut — wklejasz link do ogłoszenia.",
+    "sell3": "Wiesz DLACZEGO taka cena, po polsku. Żadnej czarnej skrzynki.",
+    "sell4": "Miesiąc za darmo, bez karty.",
+    "leadTitle": "Zobacz swój rynek za darmo",
+    "leadSubtitle": "Wybierz miasto i sprawdź mediany cen oraz obłożenie okolicy — bez zakładania konta.",
+    "selectMarket": "Wybierz rynek",
+    "show": "Pokaż rynek",
+    "avgMedian": "Średnia mediana (30 dni)",
+    "coverageRecommendations": "Pełne rekomendacje dostępne",
+    "coverageMonitoring": "Na razie tylko monitoring — zapisz się, powiadomimy o starcie rekomendacji",
+    "waitlistEmail": "Twój e-mail",
+    "waitlistJoin": "Zapisz mnie na listę",
+    "waitlistDone": "Dziękujemy! Odezwiemy się, gdy uruchomimy rekomendacje dla tego rynku.",
+    "register": "Załóż konto (30 dni za darmo)",
+    "loadError": "Nie udało się pobrać danych. Spróbuj ponownie."
+  },
+  "register": {
+    "title": "Załóż konto — 30 dni za darmo, bez karty",
+    "accountName": "Nazwa (Twoja lub firmy)",
+    "email": "E-mail",
+    "password": "Hasło (min. 10 znaków)",
+    "submit": "Załóż konto",
+    "emailTaken": "Ten e-mail jest już zarejestrowany.",
+    "genericError": "Coś poszło nie tak. Spróbuj ponownie.",
+    "haveAccount": "Masz już konto? Zaloguj się"
+  },
+  "billing": {
+    "trialBanner": "Okres próbny: pozostało {days} dni. Bez karty.",
+    "trialExpired": "Okres próbny zakończony. Skontaktujemy się w sprawie abonamentu.",
+    "active": "Abonament aktywny.",
+    "canceled": "Abonament anulowany.",
+    "price": "{price} {currency} / obiekt / mies.",
+    "cancel": "Anuluj abonament"
+  },
+  "account": {
+    "title": "Twoje dane (RODO)",
+    "export": "Pobierz moje dane (JSON)",
+    "deleteTitle": "Usunięcie konta",
+    "deleteWarning": "Usunięcie konta trwale kasuje wszystkie dane obiektów i rekomendacji. Tej operacji nie da się cofnąć.",
+    "delete": "Usuń konto na stałe",
+    "deleteConfirm": "Na pewno? Wpisz USUŃ, aby potwierdzić.",
+    "deleteConfirmWord": "USUŃ",
+    "deleted": "Konto usunięte.",
+    "privacyLink": "Polityka prywatności"
+  },
+  "privacy": {
+    "title": "Polityka prywatności",
+    "intro": "Aura przetwarza minimum danych potrzebnych do działania usługi.",
+    "collectTitle": "Jakie dane przetwarzamy",
+    "collect": "E-mail konta oraz nazwę i lokalizację Twojego obiektu. Nie przechowujemy danych Twoich gości, danych kart płatniczych ani haseł do portali OTA.",
+    "icalTitle": "Kalendarz iCal",
+    "ical": "Link iCal służy wyłącznie do odczytu zajętości terminów. Nie daje nam dostępu do Twojego konta OTA.",
+    "rightsTitle": "Twoje prawa",
+    "rights": "W każdej chwili możesz pobrać swoje dane lub usunąć konto w ustawieniach. Hosting i kopie zapasowe w regionie UE.",
+    "back": "Powrót"
   },
   "login": {
     "title": "Logowanie",

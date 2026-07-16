@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ApiError, Property, getProperties, updateProperty } from "@/lib/api";
+import AccountSection from "@/components/AccountSection";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
@@ -125,6 +126,7 @@ export default function SettingsPage() {
           <button type="submit">{t("save")}</button>
         </form>
       )}
+      <AccountSection />
     </main>
   );
 }

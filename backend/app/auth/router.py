@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
 from app.auth.security import create_access_token, hash_password, verify_password
+from app.billing import start_trial
 from app.db import get_db
 from app.models import Account, User
 
@@ -53,6 +54,7 @@ def register(body: RegisterRequest, db: DbSession) -> TokenResponse:
         password_hash=hash_password(body.password),
     )
     db.add(user)
+    start_trial(db, account)  # 30 dni bez karty od rejestracji (§5)
     db.commit()
     return TokenResponse(access_token=create_access_token(user.id, account.id))
 

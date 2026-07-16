@@ -16,6 +16,7 @@ import {
   getRecommendations,
 } from "@/lib/api";
 import { renderExplanation } from "@/lib/explanations";
+import SubscriptionBanner from "@/components/SubscriptionBanner";
 
 function MedianChart({
   monitoring,
@@ -148,6 +149,7 @@ export default function DashboardPage() {
   return (
     <main style={{ maxWidth: 900 }}>
       <h1>{t("title")}</h1>
+      <SubscriptionBanner />
       {error !== null && <p className="error">{t(error)}</p>}
 
       {properties !== null && properties.length > 1 && (

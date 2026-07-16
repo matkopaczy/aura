@@ -30,6 +30,9 @@ def db_session():
 
 @pytest.fixture()
 def client(db_session):
+    from app.hardening import reset_rate_limit
+
+    reset_rate_limit()  # izolacja: licznik rate-limitu jest globalny w procesie
     def override_get_db():
         yield db_session
 

@@ -13,6 +13,7 @@ MARKET_DATA_TABLES = {
     "events",
     "competitor_listings",
     "price_observations",
+    "waitlist_entries",  # leady sprzed rejestracji — dane globalne, per e-mail+rynek
 }
 
 TENANT_TABLES = {
