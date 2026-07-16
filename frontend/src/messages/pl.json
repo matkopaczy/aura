@@ -32,6 +32,18 @@
     "noEvents": "Brak zatwierdzonych wydarzeń dla tego rynku.",
     "loadError": "Nie udało się pobrać danych. Spróbuj ponownie."
   },
+  "explanations": {
+    "weekend": "weekend (piątek/sobota)",
+    "sunday": "niedziela — mniejszy popyt",
+    "high_season": "sezon wysoki (czerwiec–sierpień)",
+    "low_season": "sezon niski",
+    "event": "{name}",
+    "high_occupancy": "w okolicy wolne tylko {freePct}% obiektów",
+    "mid_occupancy": "obłożenie okolicy rośnie ({occupancyPct}%)",
+    "low_occupancy": "niskie obłożenie okolicy ({occupancyPct}%)",
+    "below_median": "jesteś {positionPct}% poniżej mediany rynku",
+    "above_median": "jesteś {positionPct}% powyżej mediany rynku"
+  },
   "curation": {
     "title": "Kuracja bazy wydarzeń",
     "name": "Nazwa",
