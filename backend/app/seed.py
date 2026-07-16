@@ -109,6 +109,18 @@ CITY_EVENTS: list[tuple] = [
 
 FIRST_WAVE_SLUGS = ["krakow", "trojmiasto", "poznan"]
 
+# Współrzędne miejsca wydarzenia dla eventów punktowych (§ event-distance).
+# (slug, nazwa) -> (lat, lng). Brak wpisu = event ogólnomiejski (bez venue).
+VENUES: dict[tuple[str, str], tuple[float, float]] = {
+    ("poznan", "Poznań Game Arena"): (52.3939, 16.8820),  # MTP
+    ("poznan", "Budma"): (52.3939, 16.8820),  # MTP
+    ("poznan", "Malta Festival"): (52.4030, 16.9660),  # Jezioro Malta
+    ("trojmiasto", "Open'er Festival"): (54.5790, 18.4890),  # Gdynia-Kosakowo
+    ("trojmiasto", "Jarmark św. Dominika"): (54.3490, 18.6530),  # Gdańsk, Główne Miasto
+    ("krakow", "Wianki"): (50.0540, 19.9350),  # Wawel / bulwary
+    ("krakow", "Jarmark Bożonarodzeniowy"): (50.0617, 19.9373),  # Rynek Główny
+}
+
 
 def seed_events(db: Session) -> None:
     markets = {m.slug: m for m in db.scalars(select(Market))}
@@ -123,10 +135,13 @@ def seed_events(db: Session) -> None:
         nonlocal created
         if (market.id, name, start) in existing:
             return
+        venue = VENUES.get((market.slug, name))
         db.add(Event(
             market_id=market.id, name=name, category=category, district=district,
             start_date=start, end_date=end, impact_strength=impact,
             source="kurator-seed", curation_status=status,
+            venue_lat=venue[0] if venue else None,
+            venue_lng=venue[1] if venue else None,
         ))
         created += 1
 

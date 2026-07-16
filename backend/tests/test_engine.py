@@ -35,17 +35,23 @@ def _day(median, sample=20, occupancy=None, date=FRIDAY) -> MarketDay:
     )
 
 
-def _event(impact=0.95, date=FRIDAY) -> Event:
+def _event(impact=0.95, date=FRIDAY, name="Majówka", venue=None) -> Event:
     return Event(
         market_id=uuid.uuid4(),
-        name="Majówka",
+        name=name,
         category="dlugi-weekend",
         start_date=date,
         end_date=date,
         impact_strength=Decimal(str(impact)),
         source="test",
         curation_status=CurationStatus.APPROVED,
+        venue_lat=Decimal(str(venue[0])) if venue else None,
+        venue_lng=Decimal(str(venue[1])) if venue else None,
     )
+
+
+def _event_factor_of(draft):
+    return next(f for f in draft.factors if f.key == "event")
 
 
 def test_factors_compose_and_price_rounds_to_5():
@@ -118,3 +124,49 @@ def test_neutral_tuesday_keeps_base_price():
     )
     assert draft.factors == []
     assert draft.price == Decimal("200")
+
+
+# --- Event-distance (§ event-distance) ---
+# Obiekt jest w (52.4, 16.9). 0.1° szerokości ≈ 11 km.
+
+def test_event_without_venue_is_citywide():
+    draft = compute_recommendation(
+        _property(), FRIDAY, _day(Decimal("300")), [_event(impact=0.5)]
+    )
+    ev = _event_factor_of(draft)
+    assert ev.multiplier == 1 + 0.4 * 0.5  # pełny wpływ, bez skalowania
+    assert "venue_distance_km" not in ev.params
+
+
+def test_event_at_property_full_impact():
+    draft = compute_recommendation(
+        _property(), FRIDAY, _day(Decimal("300")),
+        [_event(impact=0.5, venue=(52.4, 16.9))],  # venue = pozycja obiektu
+    )
+    ev = _event_factor_of(draft)
+    assert ev.multiplier == 1 + 0.4 * 0.5
+    assert ev.params["venue_distance_km"] == 0.0
+
+
+def test_event_far_from_venue_decays_to_floor():
+    draft = compute_recommendation(
+        _property(), FRIDAY, _day(Decimal("300")),
+        [_event(impact=0.5, venue=(52.5, 16.9))],  # ~11 km > FAR
+    )
+    ev = _event_factor_of(draft)
+    # proximity = FLOOR 0.30 -> wpływ efektywny 0.15
+    assert ev.multiplier == 1 + 0.4 * (0.5 * 0.30)
+    assert ev.params["venue_distance_km"] > 6.0
+
+
+def test_nearby_weak_event_beats_distant_strong():
+    # A: silny (0.9) ale ~11 km od obiektu -> efektywny 0.27
+    # B: słaby (0.5) w pozycji obiektu -> efektywny 0.50 -> wygrywa
+    events = [
+        _event(impact=0.9, name="Mecz daleko", venue=(52.5, 16.9)),
+        _event(impact=0.5, name="Targi blisko", venue=(52.4, 16.9)),
+    ]
+    draft = compute_recommendation(_property(), FRIDAY, _day(Decimal("300")), events)
+    ev = _event_factor_of(draft)
+    assert ev.params["name"] == "Targi blisko"
+    assert ev.params["venue_distance_km"] == 0.0

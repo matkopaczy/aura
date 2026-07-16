@@ -25,4 +25,8 @@ def render_factor(factor: dict, locale: str = "pl") -> str:
     key = params.pop("key")
     if "position" in params:
         params["positionPct"] = abs(round(params["position"] * 100))
+    # Event z miejscem wydarzenia -> szablon z odległością (§ event-distance).
+    if key == "event" and "venue_distance_km" in params:
+        params["km"] = params["venue_distance_km"]
+        key = "event_venue"
     return t(f"factor.{key}", locale=locale, **params)

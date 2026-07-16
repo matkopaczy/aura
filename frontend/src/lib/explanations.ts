@@ -13,6 +13,11 @@ export function renderFactor(t: Translate, factor: ExplanationFactor): string {
   if (factor.position !== undefined) {
     params.positionPct = Math.abs(Math.round(factor.position * 100));
   }
+  // Event z miejscem wydarzenia -> szablon z odległością (§ event-distance).
+  if (factor.key === "event" && factor.venue_distance_km !== undefined) {
+    params.km = factor.venue_distance_km;
+    return t("event_venue", params);
+  }
   return t(factor.key, params);
 }
 

@@ -149,6 +149,7 @@ export interface ExplanationFactor {
   impact?: number;
   occupancy?: number;
   position?: number;
+  venue_distance_km?: number;
 }
 
 export interface Recommendation {

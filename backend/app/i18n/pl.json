@@ -16,6 +16,7 @@
   "factor.high_season": "sezon wysoki",
   "factor.low_season": "sezon niski",
   "factor.event": "{name}",
+  "factor.event_venue": "{name}, {km} km od miejsca wydarzenia",
   "factor.high_occupancy": "wysokie obłożenie okolicy",
   "factor.mid_occupancy": "rosnące obłożenie okolicy",
   "factor.low_occupancy": "niskie obłożenie okolicy",

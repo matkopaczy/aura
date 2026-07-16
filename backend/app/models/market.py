@@ -63,6 +63,10 @@ class Event(Base, TimestampMixin):
     start_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     end_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     impact_strength: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False)  # 0.00–1.00
+    # Miejsce wydarzenia (opcjonalne): eventy punktowe (mecz, targi) mają współrzędne,
+    # ogólnomiejskie (długi weekend, święto) zostają NULL i działają na cały rynek.
+    venue_lat: Mapped[float | None] = mapped_column(Numeric(9, 6))
+    venue_lng: Mapped[float | None] = mapped_column(Numeric(9, 6))
     source: Mapped[str] = mapped_column(String(100), nullable=False)
     curation_status: Mapped[CurationStatus] = mapped_column(
         Enum(CurationStatus, native_enum=False, length=20),

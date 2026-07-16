@@ -35,6 +35,8 @@ class EventCreate(BaseModel):
     impact_strength: float = Field(ge=0, le=1)
     source: str = Field(min_length=1, max_length=100)
     curation_status: CurationStatus = CurationStatus.DRAFT
+    venue_lat: float | None = Field(default=None, ge=-90, le=90)
+    venue_lng: float | None = Field(default=None, ge=-180, le=180)
 
 
 class EventUpdate(BaseModel):
@@ -45,6 +47,8 @@ class EventUpdate(BaseModel):
     end_date: datetime.date | None = None
     impact_strength: float | None = Field(default=None, ge=0, le=1)
     curation_status: CurationStatus | None = None
+    venue_lat: float | None = Field(default=None, ge=-90, le=90)
+    venue_lng: float | None = Field(default=None, ge=-180, le=180)
 
 
 class EventResponse(BaseModel):
@@ -58,6 +62,8 @@ class EventResponse(BaseModel):
     impact_strength: float
     source: str
     curation_status: CurationStatus
+    venue_lat: float | None
+    venue_lng: float | None
 
 
 def _to_response(event: Event, market: Market) -> EventResponse:
@@ -72,6 +78,8 @@ def _to_response(event: Event, market: Market) -> EventResponse:
         impact_strength=float(event.impact_strength),
         source=event.source,
         curation_status=event.curation_status,
+        venue_lat=float(event.venue_lat) if event.venue_lat is not None else None,
+        venue_lng=float(event.venue_lng) if event.venue_lng is not None else None,
     )
 
 
@@ -129,6 +137,8 @@ def curation_create(body: EventCreate, curator: Curator, db: DbSession) -> Event
         impact_strength=body.impact_strength,
         source=body.source,
         curation_status=body.curation_status,
+        venue_lat=body.venue_lat,
+        venue_lng=body.venue_lng,
     )
     db.add(event)
     db.commit()

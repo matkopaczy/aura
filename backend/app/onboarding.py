@@ -5,7 +5,6 @@ odczytujemy nazwę i współrzędne, dobieramy rynek po odległości od centrum
 i proponujemy cenę bazową z mediany rynku na najbliższe 30 dni.
 """
 
-import math
 import re
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
@@ -15,6 +14,7 @@ from playwright.sync_api import sync_playwright
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.geo import haversine_km
 from app.models import Market
 from app.monitoring import market_series
 from app.scraping.booking import USER_AGENT
@@ -55,14 +55,6 @@ def fetch_booking_listing(url: str) -> ListingInfo:
             browser.close()
     lat_text, lng_text = latlng.split(",")
     return ListingInfo(name=name.strip(), lat=float(lat_text), lng=float(lng_text))
-
-
-def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    radius = 6371.0
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp, dl = math.radians(lat2 - lat1), math.radians(lng2 - lng1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * radius * math.asin(math.sqrt(a))
 
 
 def match_market(db: Session, lat: float, lng: float) -> Market | None:
