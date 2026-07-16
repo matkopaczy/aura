@@ -173,6 +173,8 @@
     "high_occupancy": "w okolicy wolne tylko {freePct}% obiektów",
     "mid_occupancy": "obłożenie okolicy rośnie ({occupancyPct}%)",
     "low_occupancy": "niskie obłożenie okolicy ({occupancyPct}%)",
+    "booking_pace_up": "rynek szybko zapełnia się na ten termin",
+    "booking_pace_down": "rynek zwalnia na ten termin",
     "below_median": "jesteś {positionPct}% poniżej mediany rynku",
     "above_median": "jesteś {positionPct}% powyżej mediany rynku"
   },

@@ -20,6 +20,8 @@
   "factor.high_occupancy": "wysokie obłożenie okolicy",
   "factor.mid_occupancy": "rosnące obłożenie okolicy",
   "factor.low_occupancy": "niskie obłożenie okolicy",
+  "factor.booking_pace_up": "rynek szybko się zapełnia",
+  "factor.booking_pace_down": "rynek zwalnia",
   "factor.below_median": "{positionPct}% poniżej mediany",
   "factor.above_median": "{positionPct}% powyżej mediany"
 }

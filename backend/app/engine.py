@@ -29,6 +29,10 @@ EVENT_VENUE_FLOOR = 0.30  # duży event i tak lekko podnosi cały rynek
 OCCUPANCY_HIGH_THRESHOLD, OCCUPANCY_HIGH_MULTIPLIER = 0.7, 1.15
 OCCUPANCY_MID_THRESHOLD, OCCUPANCY_MID_MULTIPLIER = 0.5, 1.08
 OCCUPANCY_LOW_THRESHOLD, OCCUPANCY_LOW_MULTIPLIER = 0.2, 0.95
+# Tempo wypełniania rynku (§7.2): obłożenie = poziom, pace = prędkość zmiany.
+# Rynek szybko się zapełnia -> podnieś wcześniej; zwalnia -> odpuść.
+PACE_UP_THRESHOLD, PACE_UP_MULTIPLIER = 0.10, 1.08
+PACE_DOWN_THRESHOLD, PACE_DOWN_MULTIPLIER = -0.10, 0.96
 POSITION_WEIGHT = 0.5  # domykamy połowę dystansu do mediany
 POSITION_MIN, POSITION_MAX = -0.10, 0.15
 POSITION_DEADBAND = 0.05  # ±5% od mediany = bez korekty
@@ -123,6 +127,18 @@ def _occupancy_factor(occupancy: float | None) -> Factor | None:
     return None
 
 
+def _booking_pace_factor(pace: float | None) -> Factor | None:
+    """Tempo wypełniania rynku (§7.2). Poziom obłożenia obsługuje occupancy;
+    tu liczy się prędkość: rynek szybko się zapełnia -> podnieś wcześniej."""
+    if pace is None:
+        return None
+    if pace >= PACE_UP_THRESHOLD:
+        return Factor("booking_pace_up", PACE_UP_MULTIPLIER, {"pace": round(pace, 2)})
+    if pace <= PACE_DOWN_THRESHOLD:
+        return Factor("booking_pace_down", PACE_DOWN_MULTIPLIER, {"pace": round(pace, 2)})
+    return None
+
+
 def _position_factor(base_price: Decimal, median: Decimal | None) -> Factor | None:
     if median is None or median == 0:
         return None
@@ -146,12 +162,14 @@ def compute_recommendation(
 
     median = market_day.median_price if market_day else None
     occupancy = market_day.occupancy if market_day else None
+    pace = market_day.booking_pace if market_day else None
 
     candidates = [
         _day_of_week_factor(stay_date),
         _season_factor(stay_date),
         _event_factor(prop, stay_date, events),
         _occupancy_factor(occupancy),
+        _booking_pace_factor(pace),
         _position_factor(prop.base_price, median),
     ]
     factors = [f for f in candidates if f is not None]

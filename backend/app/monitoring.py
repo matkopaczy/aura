@@ -43,12 +43,39 @@ def latest_floor(db: Session, market: Market) -> FloorView | None:
     )
 
 
+# Booking pace: potrzebujemy ≥2 przebiegów scrapera i sensownej próbki, żeby
+# porównywać obłożenie w czasie. Inaczej pace = None (jak occupancy).
+PACE_MIN_SAMPLE = 5
+
+
 @dataclass(frozen=True)
 class MarketDay:
     stay_date: datetime.date
     median_price: Decimal | None  # None gdy brak próbki
     sample_size: int
     occupancy: float | None  # None gdy brak danych wyczerpujących (§ runner)
+    # Tempo wypełniania rynku: zmiana obłożenia między dwoma ostatnimi przebiegami
+    # scrapera (+0.15 = o 15 pkt proc. więcej rynku zajęte niż poprzednio). §7.2.
+    booking_pace: float | None = None
+
+
+def _run_occupancy(availabilities: list[bool]) -> float | None:
+    """Odsetek niedostępnych w jednym przebiegu; None gdy próbka za mała."""
+    if len(availabilities) < PACE_MIN_SAMPLE:
+        return None
+    return sum(1 for a in availabilities if not a) / len(availabilities)
+
+
+def _booking_pace(runs: dict[datetime.date, dict]) -> float | None:
+    """Zmiana obłożenia między dwoma ostatnimi przebiegami dla danej daty pobytu."""
+    run_dates = sorted(runs)
+    if len(run_dates) < 2:
+        return None
+    latest = _run_occupancy(list(runs[run_dates[-1]].values()))
+    previous = _run_occupancy(list(runs[run_dates[-2]].values()))
+    if latest is None or previous is None:
+        return None
+    return latest - previous
 
 
 def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay]:
@@ -73,10 +100,14 @@ def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay
     ).all()
 
     latest: dict[tuple, tuple] = {}
+    # runs[stay_date][run_date][listing_id] = available — pod pace (§7.2)
+    runs: dict[datetime.date, dict[datetime.date, dict]] = {}
     for listing_id, stay_date, price, available, observed_at in rows:
         key = (listing_id, stay_date)
         if key not in latest or observed_at > latest[key][2]:
             latest[key] = (price, available, observed_at)
+        run = runs.setdefault(stay_date, {}).setdefault(observed_at.date(), {})
+        run[listing_id] = available
 
     by_date: dict[datetime.date, list[tuple]] = {}
     for (_, stay_date), value in latest.items():
@@ -96,6 +127,7 @@ def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay
                 occupancy=(
                     unavailable / len(observations) if unavailable and observations else None
                 ),
+                booking_pace=_booking_pace(runs.get(stay_date, {})),
             )
         )
     return series

@@ -49,6 +49,51 @@ def _obs(db, listing, stay_date, price, available=True, hours=0):
     )
 
 
+def _obs_run(db, listing, stay_date, available, run_date):
+    """Obserwacja w konkretnym przebiegu scrapera (run_date) — pod booking pace."""
+    db.add(
+        PriceObservation(
+            listing_id=listing.id,
+            stay_date=stay_date,
+            price=Decimal("300") if available else None,
+            currency_code="PLN",
+            available=available,
+            observed_at=datetime.datetime.combine(
+                run_date, datetime.time(2, 0), tzinfo=datetime.UTC
+            ),
+            source="booking",
+        )
+    )
+
+
+def test_booking_pace_from_two_runs(db_session):
+    market = _market(db_session)
+    stay = datetime.date.today() + datetime.timedelta(days=20)
+    listings = [_listing(db_session, market, f"pl/{i}") for i in range(6)]
+    run1 = datetime.date(2026, 7, 10)
+    run2 = datetime.date(2026, 7, 15)
+    # przebieg 1: 1/6 zajęte (~17%); przebieg 2: 4/6 zajęte (~67%) -> pace ~ +0.50
+    for i, listing in enumerate(listings):
+        _obs_run(db_session, listing, stay, available=(i >= 1), run_date=run1)
+        _obs_run(db_session, listing, stay, available=(i >= 4), run_date=run2)
+    db_session.commit()
+
+    day = next(d for d in market_series(db_session, market, days=30) if d.stay_date == stay)
+    assert day.booking_pace is not None
+    assert round(day.booking_pace, 2) == 0.50
+
+
+def test_booking_pace_none_with_single_run(db_session):
+    market = _market(db_session)
+    stay = datetime.date.today() + datetime.timedelta(days=20)
+    listings = [_listing(db_session, market, f"pl/{i}") for i in range(6)]
+    for listing in listings:
+        _obs_run(db_session, listing, stay, available=True, run_date=datetime.date(2026, 7, 15))
+    db_session.commit()
+    day = next(d for d in market_series(db_session, market, days=30) if d.stay_date == stay)
+    assert day.booking_pace is None
+
+
 def test_market_series_median_uses_latest_observation_per_listing(db_session):
     market = _market(db_session)
     tomorrow = datetime.date.today() + datetime.timedelta(days=1)

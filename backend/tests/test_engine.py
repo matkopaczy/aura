@@ -29,9 +29,10 @@ def _property(base=Decimal("200"), min_price=Decimal("100"), max_price=None) -> 
     )
 
 
-def _day(median, sample=20, occupancy=None, date=FRIDAY) -> MarketDay:
+def _day(median, sample=20, occupancy=None, date=FRIDAY, booking_pace=None) -> MarketDay:
     return MarketDay(
-        stay_date=date, median_price=median, sample_size=sample, occupancy=occupancy
+        stay_date=date, median_price=median, sample_size=sample, occupancy=occupancy,
+        booking_pace=booking_pace,
     )
 
 
@@ -157,6 +158,39 @@ def test_event_far_from_venue_decays_to_floor():
     # proximity = FLOOR 0.30 -> wpływ efektywny 0.15
     assert ev.multiplier == 1 + 0.4 * (0.5 * 0.30)
     assert ev.params["venue_distance_km"] > 6.0
+
+
+def test_booking_pace_up_adds_uplift():
+    # wtorek poza sezonem, w paśmie mediany -> tylko pace decyduje
+    draft = compute_recommendation(
+        _property(), TUESDAY, _day(Decimal("200"), booking_pace=0.20), []
+    )
+    keys = {f.key for f in draft.factors}
+    assert keys == {"booking_pace_up"}
+    assert draft.price > Decimal("200")
+
+
+def test_booking_pace_down_lowers():
+    draft = compute_recommendation(
+        _property(), TUESDAY, _day(Decimal("200"), booking_pace=-0.20), []
+    )
+    keys = {f.key for f in draft.factors}
+    assert keys == {"booking_pace_down"}
+    assert draft.price < Decimal("200")
+
+
+def test_booking_pace_within_band_is_neutral():
+    draft = compute_recommendation(
+        _property(), TUESDAY, _day(Decimal("200"), booking_pace=0.05), []
+    )
+    assert all(f.key not in ("booking_pace_up", "booking_pace_down") for f in draft.factors)
+
+
+def test_booking_pace_none_when_no_history():
+    draft = compute_recommendation(
+        _property(), TUESDAY, _day(Decimal("200"), booking_pace=None), []
+    )
+    assert all(f.key not in ("booking_pace_up", "booking_pace_down") for f in draft.factors)
 
 
 def test_nearby_weak_event_beats_distant_strong():
