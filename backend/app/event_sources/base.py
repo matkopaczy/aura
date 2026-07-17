@@ -26,6 +26,22 @@ def map_category(cat_text: str, default: str = "eventy") -> tuple[str, float]:
     return default, CATEGORY_IMPACT.get(default, 0.4)
 
 
+# Słowa w NAZWIE wydarzenia jednoznacznie wskazujące sport — dla źródeł aren,
+# gdzie kategoria nie jest podana wprost (kurator i tak koryguje szkice).
+SPORT_NAME_KEYWORDS = (
+    "puchar", "mecz", "liga", " vs ", "boks", "mma", "mistrzostwa",
+    "speedway", "world cup",
+)
+
+
+def category_from_name(name: str, default: str = "koncert") -> tuple[str, float]:
+    """Kategoria wnioskowana z nazwy wydarzenia (sport po słowach kluczowych)."""
+    lowered = name.lower()
+    if any(keyword in lowered for keyword in SPORT_NAME_KEYWORDS):
+        return map_category("sport")
+    return map_category("", default=default)
+
+
 @dataclass(frozen=True)
 class CandidateEvent:
     name: str

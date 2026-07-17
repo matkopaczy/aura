@@ -16,7 +16,12 @@ import re
 
 from playwright.sync_api import sync_playwright
 
-from app.event_sources.base import CandidateEvent, EventSource, map_category
+from app.event_sources.base import (
+    CandidateEvent,
+    EventSource,
+    category_from_name,
+    map_category,
+)
 from app.robots import read_robots
 from app.scraping.booking import USER_AGENT
 
@@ -60,16 +65,11 @@ def name_from_slug(href: str) -> str | None:
     return match.group(1).replace("-", " ").strip().title() or None
 
 
-# Słowa w nazwie jednoznacznie wskazujące sport — slogan bywa nazwą hali
-# ("SPORT ARENA" = mniejsza hala kompleksu), więc nazwa jest pewniejsza.
-SPORT_KEYWORDS = ("puchar", "mecz", "liga", " vs ", "boks", "mma", "gala boksu", "mistrzostwa")
-
-
 def categorize(slogan: str, name: str) -> tuple[str, float]:
     """Kategoria z nazwy (sport) lub sloganu; 'Sport Arena' w sloganie to hala."""
-    lowered = name.lower()
-    if any(keyword in lowered for keyword in SPORT_KEYWORDS):
-        return map_category("sport")
+    category, impact = category_from_name(name)
+    if category == "sport":
+        return category, impact
     slogan_clean = "" if "aren" in slogan.lower() else slogan
     return map_category(slogan_clean, default="koncert")
 
