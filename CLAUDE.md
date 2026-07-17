@@ -19,6 +19,8 @@ nigdy nie podejmuj ich samodzielnie.
    Wyjątki (dane globalne, bez account_id): `markets`, `events`,
    `competitor_listings`, `price_observations`, `floor_signals`,
    `waitlist_entries` — lista zamknięta, egzekwowana testem strażniczym.
+   Decyzja (2026-07): na pilota izolacja wyłącznie aplikacyjna; RLS
+   w Postgresie dopiero przed komercjalizacją (§11 — bez infry na zapas).
 2. **Enumy**: `enum.StrEnum` + `Enum(..., native_enum=False, length=20)`.
    **W bazie leżą NAZWY członków** (`"APPROVED"`, `"RECOMMENDATIONS"`), nie
    wartości. Surowy SQL porównuje z nazwą; Python porównuje z członkiem enuma.
@@ -94,9 +96,11 @@ istnieje, zanim dodasz** — była już raz zdublowana `getMarketEvents`);
   pamiętaj o tym.
 - Decimal z API porównuj przez `Decimal(...)`, nie przez format stringa
   ("200" vs "200.00").
-- Konta dev (Postgres): `smoke@example.com` / `smoke-test-haslo-123`
-  (kurator, obiekt "Apartament Stary Rynek" w Poznaniu), `roles_owner@` /
-  `roles_rec@example.com`.
+- Konta dev (lokalne fikstury w dev-Postgresie, NIE sekrety — nic nie chronią
+  poza localhostem): `smoke@example.com` / `smoke-test-haslo-123` (kurator,
+  obiekt "Apartament Stary Rynek" w Poznaniu), `roles_owner@` /
+  `roles_rec@example.com`. Prawdziwe sekrety wyłącznie w `.env`
+  (niewersjonowany).
 
 ## Scraping i źródła eventów — §6.4 (prawnie wrażliwe)
 
@@ -185,8 +189,15 @@ export DATABASE_URL="postgresql+psycopg://aura:aura@localhost:5432/aura"
 docker exec aura-db-1 psql -U aura -d aura -c "\d nazwa_tabeli"   # kolumna/tabela istnieje
 ```
 
-Frontend przy zmianach w `frontend/`: strona renderuje się w podglądzie bez
-błędów w konsoli/logach dev serwera (`npx tsc --noEmit` przy zmianach typów).
+Frontend przy KAŻDEJ zmianie w `frontend/` (oba kroki są też w CI):
+
+```bash
+cd frontend
+npm run lint        # eslint; reguła set-state-in-effect = warn (3 stare miejsca)
+npm run typecheck   # tsc --noEmit
+```
+
+oraz: strona renderuje się w podglądzie bez błędów w konsoli/logach dev serwera.
 
 Ponadto:
 1. **Weryfikacja na żywo, nie tylko testy**: nowy endpoint → curl/przeglądarka
@@ -196,8 +207,8 @@ Ponadto:
    scrapera — ponowny realny fetch, nawet gdy testy przechodzą.
 2. Nowe stringi UI mają klucze w `pl.json` (obu, jeśli dotyczy maili).
 3. Migracja zastosowana na dev-bazie i zweryfikowana (nie tylko plik w repo).
-4. Testów PRZYBYŁO przy nowej logice (stan bazowy: 140; guardian testy nietknięte
-   chyba że świadomie rozszerzasz listę wyjątków).
+4. Nowa logika = nowe testy (suita ma rosnąć razem z kodem; guardian testy
+   nietknięte, chyba że świadomie rozszerzasz listę wyjątków).
 5. Commit po polsku: pierwsza linia = co i po co (z § specu, jeśli dotyczy),
    body = decyzje i pułapki, stopka `Co-Authored-By: Claude <model>`.
    Commituj na `main` dopiero, gdy wszystko powyżej zielone; po zakończonym
