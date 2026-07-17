@@ -73,6 +73,12 @@ def run_ical_sync() -> None:
         logger.info("Zakończono synchronizację iCal: %d obiektów", len(properties))
 
 
+def run_event_ingest() -> None:
+    from app.event_sources.ingest import run
+
+    run()  # zasila kandydatów na eventy z oficjalnych źródeł (DRAFT do kuracji)
+
+
 def build_scheduler() -> BlockingScheduler:
     from sqlalchemy.orm import Session
 
@@ -105,6 +111,13 @@ def build_scheduler() -> BlockingScheduler:
         run_weekly_reports,
         CronTrigger(day_of_week="mon", hour=7, minute=0, timezone="Europe/Warsaw"),
         id="weekly-reports",
+        misfire_grace_time=3600,
+    )
+    # Eventy zmieniają się wolno — odświeżanie raz w tygodniu wystarcza.
+    scheduler.add_job(
+        run_event_ingest,
+        CronTrigger(day_of_week="mon", hour=4, minute=0, timezone="Europe/Warsaw"),
+        id="event-ingest",
         misfire_grace_time=3600,
     )
     return scheduler
