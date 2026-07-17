@@ -23,7 +23,32 @@
     "waitlistJoin": "Zapisz mnie na listę",
     "waitlistDone": "Dziękujemy! Odezwiemy się, gdy uruchomimy rekomendacje dla tego rynku.",
     "register": "Załóż konto (30 dni za darmo)",
-    "loadError": "Nie udało się pobrać danych. Spróbuj ponownie."
+    "loadError": "Nie udało się pobrać danych. Spróbuj ponownie.",
+    "reportsTitle": "Raporty rynkowe miast",
+    "reportsSubtitle": "Publiczne dane o cenach i obłożeniu — bez logowania:"
+  },
+  "marketReport": {
+    "metaTitle": "{city}: ceny najmu krótkoterminowego i mediana rynku | Aura",
+    "metaDescription": "Mediana ceny za dobę ({median} {currency}) i obłożenie najmu krótkoterminowego — rynek {city}. Dane z codziennego monitoringu Aura.",
+    "metaDescriptionNoData": "Ceny i obłożenie najmu krótkoterminowego — rynek {city}. Dane z codziennego monitoringu ofert. Aura.",
+    "title": "{city}: ceny i obłożenie najmu krótkoterminowego",
+    "intro": "Dane pochodzą z codziennego monitoringu ofert najmu krótkoterminowego — rynek {city}. Pokazują, ile realnie kosztuje doba i jak zapełnia się okolica, bez zakładania konta.",
+    "avgMedianLabel": "Średnia mediana ceny za dobę (30 dni)",
+    "occupancyLabel": "Średnie obłożenie okolicy",
+    "floorLine": "Najtańszy dostępny w okolicy: {min} {currency} (z {sample} obiektów, nocowanie.pl)",
+    "tableTitle": "Mediana ceny na najbliższe dni",
+    "tableDate": "Data",
+    "tableMedian": "Mediana",
+    "tableOccupancy": "Obłożenie",
+    "noData": "Brak wystarczających danych dla tego rynku — zajrzyj wkrótce.",
+    "updatedNote": "Dane odświeżane automatycznie z monitoringu rynku.",
+    "coverageRecommendations": "Dla tego miasta dostępne są pełne rekomendacje cenowe Aura.",
+    "coverageMonitoring": "To miasto jest na etapie monitoringu — zapisz się, powiadomimy o starcie rekomendacji.",
+    "otherCities": "Inne miasta:",
+    "ctaTitle": "Chcesz taką cenę na każdy dzień dla swojego obiektu?",
+    "ctaText": "Aura podpowiada cenę na każdą dobę i tłumaczy dlaczego. 30 dni za darmo, bez karty.",
+    "ctaButton": "Załóż konto",
+    "na": "—"
   },
   "register": {
     "title": "Załóż konto — 30 dni za darmo, bez karty",

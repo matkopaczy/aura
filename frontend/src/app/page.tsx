@@ -135,6 +135,22 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {markets.some((m) => m.coverage_level === "recommendations") && (
+        <section style={{ marginTop: "2rem" }}>
+          <h2>{t("reportsTitle")}</h2>
+          <p>{t("reportsSubtitle")}</p>
+          <ul>
+            {markets
+              .filter((m) => m.coverage_level === "recommendations")
+              .map((m) => (
+                <li key={m.slug}>
+                  <Link href={`/rynek/${m.slug}`}>{m.name}</Link>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }
