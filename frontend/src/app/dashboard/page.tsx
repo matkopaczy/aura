@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 import {
   ApiError,
   Attribution,
+  EventItem,
   MonitoringResponse,
   Property,
   Recommendation,
   decideRecommendation,
   generateRecommendations,
   getAttribution,
+  getMarketEvents,
   getProperties,
   getPropertyMonitoring,
   getRecommendations,
@@ -68,6 +70,7 @@ export default function DashboardPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [monitoring, setMonitoring] = useState<MonitoringResponse | null>(null);
   const [attribution, setAttribution] = useState<Attribution | null>(null);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
@@ -103,6 +106,13 @@ export default function DashboardPage() {
   }, [propertyId, handleError]);
 
   useEffect(reload, [reload]);
+
+  // Wydarzenia rynku — informacyjnie (kontekst decyzji, bez akcji).
+  const marketSlug = properties?.find((p) => p.id === propertyId)?.market_slug ?? null;
+  useEffect(() => {
+    if (marketSlug === null) return;
+    getMarketEvents(marketSlug).then(setEvents).catch(handleError);
+  }, [marketSlug, handleError]);
 
   async function decide(id: string, decision: "accepted" | "rejected") {
     try {
@@ -255,6 +265,42 @@ export default function DashboardPage() {
           ))}
         </tbody>
       </table>
+
+      <section style={{ marginTop: "2rem" }}>
+        <h2>{t("eventsTitle")}</h2>
+        <p style={{ color: "#555" }}>{t("eventsHint")}</p>
+        {events.length === 0 ? (
+          <p>{t("eventsEmpty")}</p>
+        ) : (
+          <ul>
+            {events.slice(0, 10).map((ev) => (
+              <li key={ev.id}>
+                <strong>{ev.name}</strong> — {ev.start_date}
+                {ev.end_date !== ev.start_date && ` do ${ev.end_date}`}
+                {" "}
+                <small style={{ color: "#777" }}>
+                  ({ev.category}
+                  {ev.district !== null && `, ${ev.district}`})
+                </small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section style={{ marginTop: "2rem", background: "#f7f7f9", padding: "1rem 1.25rem", borderRadius: 8 }}>
+        <h2 style={{ marginTop: 0 }}>{t("factorsTitle")}</h2>
+        <p style={{ color: "#555" }}>{t("factorsHint")}</p>
+        <ul>
+          <li>{t("factorEvents")}</li>
+          <li>{t("factorOccupancy")}</li>
+          <li>{t("factorPace")}</li>
+          <li>{t("factorPosition")}</li>
+          <li>{t("factorWeekend")}</li>
+          <li>{t("factorSeason")}</li>
+          <li>{t("factorOrphan")}</li>
+        </ul>
+      </section>
     </main>
   );
 }
