@@ -58,3 +58,11 @@ def test_parse_articles():
     bajm = out[1]
     assert bajm.start_date == datetime.date(2026, 7, 22)
     assert bajm.venue_lat == 54.4418  # Sopot
+
+
+def test_parse_articles_sport_category():
+    cards = [{"title": "Lechia - Legia", "month": "SIE", "day": "15", "city": "Gdańsk,"}]
+    out = parse_articles(cards, TODAY, category="sport", impact=0.7)
+    assert len(out) == 1
+    assert out[0].category == "sport"
+    assert out[0].impact_strength == 0.7

@@ -10,13 +10,13 @@ import datetime
 import re
 import time
 import urllib.parse
-import urllib.robotparser
 from collections.abc import Iterator
 from decimal import Decimal
 
 from playwright.sync_api import sync_playwright
 
 from app.models import Market
+from app.robots import read_robots
 from app.scraping.base import DayObservation, ObservedListing, SourceAdapter
 
 BASE_URL = "https://www.booking.com"
@@ -74,8 +74,7 @@ class BookingAdapter(SourceAdapter):
     def __init__(self, pages_per_date: int = 2, request_interval_s: float = 2.5):
         self.pages_per_date = pages_per_date
         self.request_interval_s = request_interval_s
-        self._robots = urllib.robotparser.RobotFileParser(f"{BASE_URL}/robots.txt")
-        self._robots.read()
+        self._robots = read_robots(BASE_URL, USER_AGENT)
 
     def _search_url(self, market: Market, stay_date: datetime.date, offset: int) -> str:
         params = urllib.parse.urlencode(

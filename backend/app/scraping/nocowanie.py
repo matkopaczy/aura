@@ -10,12 +10,12 @@ Selektory i format ceny zweryfikowane na żywo 2026-07-16 headless
 """
 
 import re
-import urllib.robotparser
 from decimal import Decimal
 
 from playwright.sync_api import sync_playwright
 
 from app.models import Market
+from app.robots import read_robots
 from app.scraping.base import FloorAdapter, FloorListing
 from app.scraping.booking import USER_AGENT
 
@@ -68,8 +68,7 @@ class NocowanieAdapter(FloorAdapter):
 
     def __init__(self, request_timeout_ms: int = 60_000):
         self.request_timeout_ms = request_timeout_ms
-        self._robots = urllib.robotparser.RobotFileParser(f"{BASE_URL}/robots.txt")
-        self._robots.read()
+        self._robots = read_robots(BASE_URL, USER_AGENT)
 
     def _city_url(self, market: Market) -> str:
         return f"{BASE_URL}/noclegi/{market.slug}/"

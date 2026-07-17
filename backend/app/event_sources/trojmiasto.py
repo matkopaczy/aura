@@ -19,7 +19,7 @@ from app.event_sources.base import CandidateEvent, EventSource
 from app.robots import read_robots
 from app.scraping.booking import USER_AGENT
 
-CONCERTS_URL = "https://www.trojmiasto.pl/imprezy/koncerty/"
+BASE_URL = "https://www.trojmiasto.pl"
 
 MONTH_ABBR = {
     "sty": 1, "lut": 2, "mar": 3, "kwi": 4, "maj": 5, "cze": 6,
@@ -61,7 +61,9 @@ def city_venue(city_text: str) -> tuple[str, tuple[float, float] | None]:
     return name, CITY_COORDS.get(name.lower())
 
 
-def parse_articles(cards: list[dict], today: datetime.date) -> list[CandidateEvent]:
+def parse_articles(
+    cards: list[dict], today: datetime.date, category: str = "koncert", impact: float = 0.6
+) -> list[CandidateEvent]:
     result: list[CandidateEvent] = []
     for card in cards:
         title = (card.get("title") or "").strip()
@@ -82,10 +84,10 @@ def parse_articles(cards: list[dict], today: datetime.date) -> list[CandidateEve
         result.append(
             CandidateEvent(
                 name=title,
-                category="koncert",
+                category=category,
                 start_date=start,
                 end_date=end if end >= start else start,
-                impact_strength=0.6,
+                impact_strength=impact,
                 venue_lat=coords[0] if coords else None,
                 venue_lng=coords[1] if coords else None,
                 district=city_name or None,
@@ -104,17 +106,25 @@ _EXTRACT_JS = """
 """
 
 
-class TrojmiastoConcertsSource(EventSource):
-    source = "trojmiasto-koncerty"
+class TrojmiastoSource(EventSource):
+    """Listing trojmiasto.pl dla jednej kategorii (np. koncerty, sport)."""
+
     market_slug = "trojmiasto"
 
-    def __init__(self, timeout_ms: int = 60_000):
+    def __init__(
+        self, source: str, listing_path: str, category: str, impact: float,
+        timeout_ms: int = 60_000,
+    ):
+        self.source = source
+        self.listing_url = f"{BASE_URL}{listing_path}"
+        self.category = category
+        self.impact = impact
         self.timeout_ms = timeout_ms
-        self._robots = read_robots("https://www.trojmiasto.pl", USER_AGENT)
+        self._robots = read_robots(BASE_URL, USER_AGENT)
 
     def fetch(self) -> list[CandidateEvent]:
-        if not self._robots.can_fetch(USER_AGENT, CONCERTS_URL):
-            raise PermissionError(f"robots.txt zabrania: {CONCERTS_URL}")
+        if not self._robots.can_fetch(USER_AGENT, self.listing_url):
+            raise PermissionError(f"robots.txt zabrania: {self.listing_url}")
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=True)
             context = browser.new_context(user_agent=USER_AGENT, locale="pl-PL")
@@ -124,10 +134,18 @@ class TrojmiastoConcertsSource(EventSource):
             )
             page = context.new_page()
             try:
-                page.goto(CONCERTS_URL, wait_until="domcontentloaded", timeout=self.timeout_ms)
+                page.goto(self.listing_url, wait_until="domcontentloaded", timeout=self.timeout_ms)
                 page.wait_for_selector("article .event__item__title", timeout=30_000)
                 cards = page.evaluate(_EXTRACT_JS)
             finally:
                 context.close()
                 browser.close()
-        return parse_articles(cards, datetime.date.today())
+        return parse_articles(cards, datetime.date.today(), self.category, self.impact)
+
+
+def trojmiasto_koncerty() -> TrojmiastoSource:
+    return TrojmiastoSource("trojmiasto-koncerty", "/imprezy/koncerty/", "koncert", 0.6)
+
+
+def trojmiasto_sport() -> TrojmiastoSource:
+    return TrojmiastoSource("trojmiasto-sport", "/imprezy/sport-rekreacja/", "sport", 0.7)
