@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import CoverageLevel, Market, WaitlistEntry
-from app.monitoring import latest_floor, market_series
+from app.monitoring import latest_floor, market_series, occupancy_map
 
 router = APIRouter(prefix="/api/public", tags=["public"])
 
@@ -95,6 +95,29 @@ def market_preview(market_slug: str, db: DbSession, days: int = 30) -> MarketPre
             else None
         ),
     )
+
+
+class OccupancyPoint(BaseModel):
+    slug: str
+    name: str
+    center_lat: float
+    center_lng: float
+    occupancy: float | None  # None = rynek bez danych wyczerpujących
+
+
+@router.get("/occupancy", response_model=list[OccupancyPoint])
+def public_occupancy(db: DbSession, days: int = 30) -> list[OccupancyPoint]:
+    """Obłożenie wszystkich rynków — mapa Polski na landingu (§5.1)."""
+    return [
+        OccupancyPoint(
+            slug=m.slug,
+            name=m.name,
+            center_lat=m.center_lat,
+            center_lng=m.center_lng,
+            occupancy=m.occupancy,
+        )
+        for m in occupancy_map(db, days=days)
+    ]
 
 
 @router.post("/waitlist", status_code=status.HTTP_201_CREATED)

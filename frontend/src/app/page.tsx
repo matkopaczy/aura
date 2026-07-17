@@ -11,6 +11,7 @@ import {
   getPublicMarkets,
   joinWaitlist,
 } from "@/lib/api";
+import PolandOccupancyMap from "@/components/PolandOccupancyMap";
 
 function averageMedian(preview: MarketPreview): number | null {
   const values = preview.days
@@ -135,6 +136,8 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      <PolandOccupancyMap />
 
       {markets.some((m) => m.coverage_level === "recommendations") && (
         <section style={{ marginTop: "2rem" }}>

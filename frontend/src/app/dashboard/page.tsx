@@ -11,10 +11,12 @@ import {
   Recommendation,
   decideRecommendation,
   generateRecommendations,
+  RingItem,
   getAttribution,
   getMarketEvents,
   getProperties,
   getPropertyMonitoring,
+  getPropertyRings,
   getRecommendations,
 } from "@/lib/api";
 import { renderExplanation } from "@/lib/explanations";
@@ -71,6 +73,7 @@ export default function DashboardPage() {
   const [monitoring, setMonitoring] = useState<MonitoringResponse | null>(null);
   const [attribution, setAttribution] = useState<Attribution | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [rings, setRings] = useState<RingItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
@@ -96,11 +99,13 @@ export default function DashboardPage() {
       getRecommendations(propertyId),
       getPropertyMonitoring(propertyId, 60),
       getAttribution(propertyId),
+      getPropertyRings(propertyId),
     ])
-      .then(([recs, mon, attr]) => {
+      .then(([recs, mon, attr, ringRows]) => {
         setRecommendations(recs);
         setMonitoring(mon);
         setAttribution(attr);
+        setRings(ringRows);
       })
       .catch(handleError);
   }, [propertyId, handleError]);
@@ -213,6 +218,37 @@ export default function DashboardPage() {
             basePrice={basePrice}
             labels={{ yourPrice: t("chartYourPrice"), median: t("chartMedian") }}
           />
+        </section>
+      )}
+
+      {rings.some((r) => r.listings > 0) && (
+        <section style={{ marginTop: "1.5rem" }}>
+          <h2>{t("ringsTitle")}</h2>
+          <p style={{ color: "#555" }}>{t("ringsHint")}</p>
+          {rings.map((r) => (
+            <div key={r.ring} style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: 6 }}>
+              <span style={{ width: 70 }}>{r.ring} km</span>
+              <div style={{ flex: 1, background: "#eceeec", borderRadius: 4, height: 14 }}>
+                {r.occupancy !== null && (
+                  <div
+                    style={{
+                      width: `${Math.round(r.occupancy * 100)}%`,
+                      background: "#3c8a47",
+                      height: "100%",
+                      borderRadius: 4,
+                    }}
+                  />
+                )}
+              </div>
+              <span style={{ width: 170, fontSize: "0.9rem" }}>
+                {r.occupancy !== null
+                  ? `${Math.round(r.occupancy * 100)}% (${t("ringsListings", { count: r.listings })})`
+                  : r.listings > 0
+                    ? `${t("noData")} (${t("ringsListings", { count: r.listings })})`
+                    : t("ringsEmpty")}
+              </span>
+            </div>
+          ))}
         </section>
       )}
 

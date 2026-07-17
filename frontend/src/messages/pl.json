@@ -25,7 +25,12 @@
     "register": "Załóż konto (30 dni za darmo)",
     "loadError": "Nie udało się pobrać danych. Spróbuj ponownie.",
     "reportsTitle": "Raporty rynkowe miast",
-    "reportsSubtitle": "Publiczne dane o cenach i obłożeniu — bez logowania:"
+    "reportsSubtitle": "Publiczne dane o cenach i obłożeniu — bez logowania:",
+    "mapTitle": "Mapa obłożenia w Polsce",
+    "mapSubtitle": "Które rynki zapełniają się najmocniej w najbliższych 30 dniach. Kliknij miasto, aby zobaczyć raport.",
+    "mapLegendLow": "niskie",
+    "mapLegendHigh": "wysokie",
+    "mapNoData": "brak danych"
   },
   "marketReport": {
     "metaTitle": "{city}: ceny najmu krótkoterminowego i mediana rynku | Aura",
@@ -129,6 +134,10 @@
     "counterAccepted": "zaakceptowane: {count}",
     "counterSold": "sprzedane terminy: {count}",
     "counterConservativeSold": "z tego ostrożnie liczone: {count}",
+    "ringsTitle": "Obłożenie wg odległości od centrum",
+    "ringsHint": "Przybliżona mapa miasta: jak zapełnia się konkurencja bliżej i dalej od centrum (najbliższe 30 dni).",
+    "ringsListings": "{count} obiektów",
+    "ringsEmpty": "brak obiektów",
     "eventsTitle": "Nadchodzące wydarzenia w okolicy",
     "eventsHint": "Informacyjnie — te wydarzenia silnik już uwzględnia w rekomendacjach powyżej. Nie musisz nic z nimi robić.",
     "eventsEmpty": "Brak nadchodzących wydarzeń dla tego rynku.",

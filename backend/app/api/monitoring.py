@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.auth.deps import CurrentUser
 from app.db import get_db
 from app.models import CoverageLevel, Market, Property
-from app.monitoring import market_series, price_position
+from app.monitoring import market_series, occupancy_by_ring, price_position
 
 router = APIRouter(prefix="/api", tags=["monitoring"])
 
@@ -101,3 +101,29 @@ def property_monitoring(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="property_not_found")
     market = db.get(Market, prop.market_id)
     return _series_response(db, market, days, base_price=prop.base_price)
+
+
+class RingResponse(BaseModel):
+    ring: str  # km od centrum, np. "1-3"
+    occupancy: float | None
+    listings: int
+
+
+@router.get("/monitoring/property/{property_id}/rings", response_model=list[RingResponse])
+def property_rings(
+    property_id: uuid.UUID, user: CurrentUser, db: DbSession, days: int = 30
+) -> list[RingResponse]:
+    """Obłożenie okolicy wg odległości od centrum — przybliżona mapa miasta."""
+    prop = db.scalar(
+        select(Property).where(
+            Property.id == property_id,
+            Property.account_id == user.account_id,  # izolacja tenantów (§6.2 pkt 1)
+        )
+    )
+    if prop is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="property_not_found")
+    market = db.get(Market, prop.market_id)
+    return [
+        RingResponse(ring=r.ring, occupancy=r.occupancy, listings=r.listings)
+        for r in occupancy_by_ring(db, market, days=days)
+    ]

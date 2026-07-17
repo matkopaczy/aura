@@ -283,6 +283,28 @@ export interface MarketPreview {
 
 export const getPublicMarkets = () => request<PublicMarket[]>("/api/public/markets");
 
+// Obłożenie rynków pod mapę Polski (landing, bez logowania).
+export interface OccupancyPoint {
+  slug: string;
+  name: string;
+  center_lat: number;
+  center_lng: number;
+  occupancy: number | null;
+}
+
+export const getPublicOccupancy = () =>
+  request<OccupancyPoint[]>("/api/public/occupancy");
+
+// Obłożenie wg odległości od centrum (dashboard właściciela).
+export interface RingItem {
+  ring: string;
+  occupancy: number | null;
+  listings: number;
+}
+
+export const getPropertyRings = (id: string) =>
+  request<RingItem[]>(`/api/monitoring/property/${id}/rings`);
+
 export const getMarketPreview = (slug: string) =>
   request<MarketPreview>(`/api/public/preview/${slug}`);
 

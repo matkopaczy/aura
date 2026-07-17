@@ -202,3 +202,95 @@ def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay
 def price_position(base_price: Decimal, median_price: Decimal) -> float:
     """Pozycja ceny klienta vs mediana: -0.15 = 15% poniżej mediany."""
     return float((base_price - median_price) / median_price)
+
+
+# Pierścienie odległości od centrum (km) — przybliżona mapa obłożenia miasta
+# bez współrzędnych obiektów (mamy tylko distance_center_km z wyników, §6.4).
+DISTANCE_RINGS: list[tuple[float, float | None, str]] = [
+    (0.0, 1.0, "0-1"),
+    (1.0, 3.0, "1-3"),
+    (3.0, 6.0, "3-6"),
+    (6.0, None, "6+"),
+]
+
+
+@dataclass(frozen=True)
+class RingOccupancy:
+    ring: str  # etykieta pierścienia, np. "1-3"
+    occupancy: float | None  # None gdy brak danych wyczerpujących (jak MarketDay)
+    listings: int  # ile obiektów konkurencji w pierścieniu
+
+
+def occupancy_by_ring(db: Session, market: Market, days: int = 30) -> list[RingOccupancy]:
+    """Obłożenie okolicy wg odległości od centrum, zagregowane po horyzoncie."""
+    today_local = datetime.datetime.now(ZoneInfo(market.timezone)).date()
+    date_from = today_local + datetime.timedelta(days=1)
+    date_to = today_local + datetime.timedelta(days=days)
+
+    rows = db.execute(
+        select(
+            PriceObservation.listing_id,
+            PriceObservation.stay_date,
+            PriceObservation.available,
+            PriceObservation.observed_at,
+            CompetitorListing.distance_center_km,
+        )
+        .join(CompetitorListing, CompetitorListing.id == PriceObservation.listing_id)
+        .where(
+            CompetitorListing.market_id == market.id,
+            CompetitorListing.distance_center_km.is_not(None),
+            PriceObservation.stay_date >= date_from,
+            PriceObservation.stay_date <= date_to,
+        )
+    ).all()
+
+    latest: dict[tuple, tuple] = {}  # (listing, date) -> (available, observed_at, distance)
+    for listing_id, stay_date, available, observed_at, distance in rows:
+        key = (listing_id, stay_date)
+        if key not in latest or observed_at > latest[key][1]:
+            latest[key] = (available, observed_at, float(distance))
+
+    result = []
+    for low, high, label in DISTANCE_RINGS:
+        in_ring = [
+            (listing_id, available)
+            for (listing_id, _), (available, _, distance) in latest.items()
+            if distance >= low and (high is None or distance < high)
+        ]
+        unavailable = sum(1 for _, available in in_ring if not available)
+        result.append(
+            RingOccupancy(
+                ring=label,
+                # Jak w market_series: 0 niedostępnych może znaczyć "skan
+                # niewyczerpujący", więc nie twierdzimy "0% obłożenia".
+                occupancy=unavailable / len(in_ring) if unavailable and in_ring else None,
+                listings=len({listing_id for listing_id, _ in in_ring}),
+            )
+        )
+    return result
+
+
+@dataclass(frozen=True)
+class MarketOccupancy:
+    slug: str
+    name: str
+    center_lat: float
+    center_lng: float
+    occupancy: float | None  # średnia z dni z danymi; None gdy brak
+
+
+def occupancy_map(db: Session, days: int = 30) -> list[MarketOccupancy]:
+    """Obłożenie wszystkich rynków — dane pod mapę Polski (landing, §5.1)."""
+    result = []
+    for market in db.scalars(select(Market).order_by(Market.name)):
+        values = [d.occupancy for d in market_series(db, market, days=days) if d.occupancy is not None]
+        result.append(
+            MarketOccupancy(
+                slug=market.slug,
+                name=market.name,
+                center_lat=float(market.center_lat),
+                center_lng=float(market.center_lng),
+                occupancy=sum(values) / len(values) if values else None,
+            )
+        )
+    return result
