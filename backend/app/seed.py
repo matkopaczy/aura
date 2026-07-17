@@ -110,6 +110,26 @@ CITY_EVENTS: list[tuple] = [
      _D(2027, 6, 30), _D(2027, 7, 3), 0.9, _DRAFT),
 ]
 
+# Ferie zimowe 2026/2027 wg MEN (trzy tury, kalendarz oficjalny) — §3:
+# dla kurortów to najsilniejszy popyt zimy. Deterministyczne dane urzędowe,
+# status APPROVED z definicji. (nazwa, start, koniec)
+FERIE_2027: list[tuple[str, datetime.date, datetime.date]] = [
+    ("Ferie zimowe — tura 1 (podkarpackie, podlaskie, dolnośląskie, łódzkie, śląskie, opolskie)",
+     _D(2027, 1, 18), _D(2027, 1, 31)),
+    ("Ferie zimowe — tura 2 (mazowieckie, pomorskie, świętokrzyskie, lubelskie)",
+     _D(2027, 2, 1), _D(2027, 2, 14)),
+    ("Ferie zimowe — tura 3 (lubuskie, kujawsko-pomorskie, warmińsko-mazurskie, wielkopolskie, zachodniopomorskie, małopolskie)",
+     _D(2027, 2, 15), _D(2027, 2, 28)),
+]
+
+# Rynki, gdzie ferie realnie podnoszą popyt: góry mocno, uzdrowiska nad morzem
+# umiarkowanie. Miasta pomijamy (ferie = odpływ, nie napływ) — bez zgadywania.
+FERIE_IMPACT: dict[str, float] = {
+    "zakopane": 0.75, "karpacz": 0.75, "szklarska-poreba": 0.75,
+    "wisla": 0.75, "szczyrk": 0.75, "krynica-zdroj": 0.7,
+    "kolobrzeg": 0.35, "swinoujscie": 0.35,
+}
+
 # Współrzędne miejsca wydarzenia dla eventów punktowych (§ event-distance).
 # (slug, nazwa) -> (lat, lng). Brak wpisu = event ogólnomiejski (bez venue).
 VENUES: dict[tuple[str, str], tuple[float, float]] = {
@@ -150,6 +170,10 @@ def seed_events(db: Session) -> None:
     for market in markets.values():
         for name, category, start, end, impact, status in NATIONAL_EVENTS:
             add(market, name, category, None, start, end, impact, status)
+    # Ferie zimowe do rynków zimowych (kalendarz MEN — dane urzędowe).
+    for slug, impact in FERIE_IMPACT.items():
+        for name, start, end in FERIE_2027:
+            add(markets[slug], name, "ferie", None, start, end, impact, _APPROVED)
     for slug, name, category, district, start, end, impact, status in CITY_EVENTS:
         add(markets[slug], name, category, district, start, end, impact, status)
 
