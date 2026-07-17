@@ -6,8 +6,9 @@ from app.models import (
     CoverageLevel,
     Market,
     PriceObservation,
+    PropertyType,
 )
-from app.monitoring import market_series, price_position
+from app.monitoring import market_series, price_position, segment_medians, unit_category
 
 
 def _market(db) -> Market:
@@ -28,11 +29,40 @@ def _market(db) -> Market:
     return market
 
 
-def _listing(db, market, sid) -> CompetitorListing:
-    listing = CompetitorListing(market_id=market.id, source="booking", source_listing_id=sid)
+def _listing(db, market, sid, unit_type=None) -> CompetitorListing:
+    listing = CompetitorListing(
+        market_id=market.id, source="booking", source_listing_id=sid, unit_type=unit_type
+    )
     db.add(listing)
     db.flush()
     return listing
+
+
+def test_unit_category_mapping():
+    assert unit_category("Apartament typu Classic") == PropertyType.APARTMENT
+    assert unit_category("Studio z aneksem") == PropertyType.APARTMENT
+    assert unit_category("Pokój Dwuosobowy Superior") == PropertyType.ROOM
+    assert unit_category("Domek letniskowy") == PropertyType.GUESTHOUSE
+    assert unit_category(None) is None
+    assert unit_category("Coś nietypowego") is None
+
+
+def test_segment_medians_filters_by_type(db_session):
+    market = _market(db_session)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    # 3 apartamenty (200/300/400) + 2 pokoje (100/120)
+    for i, price in enumerate([200, 300, 400]):
+        _obs(db_session, _listing(db_session, market, f"apt{i}", "Apartament typu X"),
+             tomorrow, Decimal(str(price)))
+    for i, price in enumerate([100, 120]):
+        _obs(db_session, _listing(db_session, market, f"room{i}", "Pokój Dwuosobowy"),
+             tomorrow, Decimal(str(price)))
+    db_session.commit()
+
+    seg = segment_medians(db_session, market, PropertyType.APARTMENT, days=1)
+    median, sample = seg[tomorrow]
+    assert median == Decimal("300")  # mediana z 200/300/400, bez pokoi
+    assert sample == 3
 
 
 def _obs(db, listing, stay_date, price, available=True, hours=0):

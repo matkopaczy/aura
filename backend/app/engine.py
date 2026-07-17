@@ -164,13 +164,18 @@ def compute_recommendation(
     market_day: MarketDay | None,
     events: list[Event],
     is_orphan: bool = False,
+    position_median: Decimal | None = None,
 ) -> RecommendationDraft:
     if prop.base_price is None:
         raise ValueError(f"Obiekt {prop.id} nie ma ceny bazowej — wymagana dla rekomendacji")
 
-    median = market_day.median_price if market_day else None
     occupancy = market_day.occupancy if market_day else None
     pace = market_day.booking_pace if market_day else None
+    # Pozycja liczona względem mediany segmentowej (ten sam typ obiektu), gdy podana;
+    # inaczej mediana całego rynku (bezpieczny fallback — § mediana segmentowa).
+    median = position_median if position_median is not None else (
+        market_day.median_price if market_day else None
+    )
 
     candidates = [
         _day_of_week_factor(stay_date),

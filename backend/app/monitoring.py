@@ -14,7 +14,73 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CompetitorListing, FloorSignal, Market, PriceObservation
+from app.models import (
+    CompetitorListing,
+    FloorSignal,
+    Market,
+    PriceObservation,
+    PropertyType,
+)
+
+# Segment min sample: poniżej tylu konkurentów tego samego typu wracamy do
+# mediany całego rynku (bezpieczny fallback — nigdy nie pogarszamy §11).
+SEGMENT_MIN_SAMPLE = 5
+
+
+def unit_category(unit_type: str | None) -> PropertyType | None:
+    """Mapuje wolnotekstowy unit_type konkurenta na gruby typ obiektu."""
+    if not unit_type:
+        return None
+    t = unit_type.lower()
+    if "apart" in t or "studio" in t or "mieszkan" in t:
+        return PropertyType.APARTMENT
+    if "pokój" in t or "pokoj" in t or "room" in t:
+        return PropertyType.ROOM
+    if "dom" in t or "willa" in t or "pensjonat" in t or "chata" in t:
+        return PropertyType.GUESTHOUSE
+    return None
+
+
+def segment_medians(
+    db: Session, market: Market, property_type: PropertyType, days: int = 60
+) -> dict[datetime.date, tuple[Decimal, int]]:
+    """Mediana cen konkurentów TEGO SAMEGO typu per data pobytu (median, próbka)."""
+    today_local = datetime.datetime.now(ZoneInfo(market.timezone)).date()
+    date_from = today_local + datetime.timedelta(days=1)
+    date_to = today_local + datetime.timedelta(days=days)
+
+    rows = db.execute(
+        select(
+            PriceObservation.listing_id,
+            PriceObservation.stay_date,
+            PriceObservation.price,
+            PriceObservation.available,
+            PriceObservation.observed_at,
+            CompetitorListing.unit_type,
+        )
+        .join(CompetitorListing, CompetitorListing.id == PriceObservation.listing_id)
+        .where(
+            CompetitorListing.market_id == market.id,
+            PriceObservation.stay_date >= date_from,
+            PriceObservation.stay_date <= date_to,
+        )
+    ).all()
+
+    latest: dict[tuple, tuple] = {}  # (listing, date) -> (price, available, observed_at, type)
+    for listing_id, stay_date, price, available, observed_at, unit_type in rows:
+        key = (listing_id, stay_date)
+        if key not in latest or observed_at > latest[key][2]:
+            latest[key] = (price, available, observed_at, unit_category(unit_type))
+
+    by_date: dict[datetime.date, list[Decimal]] = {}
+    for (_, stay_date), (price, available, _, category) in latest.items():
+        if available and price is not None and category == property_type:
+            by_date.setdefault(stay_date, []).append(price)
+
+    return {
+        stay_date: (Decimal(statistics.median(prices)), len(prices))
+        for stay_date, prices in by_date.items()
+    }
 
 
 @dataclass(frozen=True)

@@ -22,7 +22,7 @@ from app.models import (
     RecommendationStatus,
 )
 from app.models.base import utcnow
-from app.monitoring import market_series
+from app.monitoring import SEGMENT_MIN_SAMPLE, market_series, segment_medians
 
 router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 
@@ -98,6 +98,9 @@ def generate_for_property(db: Session, prop: Property, days: int = 60) -> list[R
         )
     ).all()
     series = market_series(db, market, days=days)
+    # Mediana segmentowa (konkurenci tego samego typu) do czynnika pozycji;
+    # fallback do mediany całego rynku, gdy segment za mały (§ mediana segmentowa).
+    segments = segment_medians(db, market, prop.property_type, days=days)
     existing = {
         rec.stay_date: rec
         for rec in db.scalars(
@@ -123,9 +126,12 @@ def generate_for_property(db: Session, prop: Property, days: int = 60) -> list[R
             if rec is not None:
                 rec.status = RecommendationStatus.EXPIRED
             continue
+        seg = segments.get(day.stay_date)
+        position_median = seg[0] if seg is not None and seg[1] >= SEGMENT_MIN_SAMPLE else None
         draft = compute_recommendation(
             prop, day.stay_date, day, events,
             is_orphan=is_orphan_night(day.stay_date, booked),
+            position_median=position_median,
         )
         if rec is None:
             rec = Recommendation(

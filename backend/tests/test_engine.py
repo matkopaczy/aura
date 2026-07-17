@@ -160,6 +160,19 @@ def test_event_far_from_venue_decays_to_floor():
     assert ev.params["venue_distance_km"] > 6.0
 
 
+def test_position_uses_segment_median_when_given():
+    # baza 200; mediana rynku 200 (neutralna), ale mediana segmentowa 300
+    # -> pozycja liczona względem 300: jesteś poniżej -> uplift
+    draft = compute_recommendation(
+        _property(base=Decimal("200")), TUESDAY, _day(Decimal("200")), [],
+        position_median=Decimal("300"),
+    )
+    keys = {f.key for f in draft.factors}
+    assert "below_median" in keys
+    assert draft.price > Decimal("200")
+    assert draft.explanation_params["median"] == "300"
+
+
 def test_orphan_night_discounts():
     # wtorek, w paśmie mediany -> tylko sierota decyduje
     draft = compute_recommendation(
