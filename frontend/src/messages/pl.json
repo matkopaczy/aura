@@ -196,6 +196,14 @@
     "startDate": "Od",
     "endDate": "Do",
     "submit": "Dodaj",
+    "selectAllDrafts": "Zaznacz wszystkie szkice",
+    "clearSelection": "Wyczyść zaznaczenie",
+    "bulkApprove": "Zatwierdź zaznaczone ({count})",
+    "bulkReject": "Odrzuć zaznaczone ({count})",
+    "refresh": "Odśwież eventy ze źródeł",
+    "refreshStarted": "Pobieranie ze źródeł ruszyło w tle — za chwilę pojawią się nowe szkice.",
+    "reloadList": "Odśwież listę",
+    "draftsCount": "Szkiców do decyzji: {count}",
     "forbidden": "To konto nie ma uprawnień kuratora.",
     "loadError": "Nie udało się pobrać danych. Spróbuj ponownie."
   }

@@ -133,6 +133,15 @@ export const curationUpdate = (id: string, patch: Partial<EventItem>) =>
     body: JSON.stringify(patch),
   });
 
+export const curationBulk = (eventIds: string[], status: "approved" | "rejected") =>
+  request<{ updated: number }>("/api/curation/events/bulk", {
+    method: "POST",
+    body: JSON.stringify({ event_ids: eventIds, status }),
+  });
+
+export const curationRefresh = () =>
+  request<{ status: string }>("/api/curation/events/refresh", { method: "POST" });
+
 export interface EventCreate {
   market_slug: string;
   name: string;

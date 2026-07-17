@@ -1,10 +1,10 @@
 import datetime
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
@@ -161,3 +161,29 @@ def curation_update(
     db.commit()
     market = db.get(Market, event.market_id)
     return _to_response(event, market)
+
+
+class BulkDecision(BaseModel):
+    event_ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
+    status: Literal["approved", "rejected"]
+
+
+@router.post("/curation/events/bulk")
+def curation_bulk(body: BulkDecision, curator: Curator, db: DbSession) -> dict:
+    """Masowe zatwierdzanie/odrzucanie — kurator ogarnia setki DRAFT-ów w minuty."""
+    result = db.execute(
+        update(Event)
+        .where(Event.id.in_(body.event_ids))
+        .values(curation_status=CurationStatus(body.status))
+    )
+    db.commit()
+    return {"updated": result.rowcount}
+
+
+@router.post("/curation/events/refresh", status_code=status.HTTP_202_ACCEPTED)
+def curation_refresh(curator: Curator, background: BackgroundTasks) -> dict:
+    """Odświeża kandydatów na eventy ze wszystkich źródeł (w tle — scraping trwa)."""
+    from app.event_sources.ingest import run
+
+    background.add_task(run)
+    return {"status": "started"}

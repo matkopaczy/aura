@@ -6,8 +6,10 @@ import {
   ApiError,
   EventItem,
   Market,
+  curationBulk,
   curationCreate,
   curationList,
+  curationRefresh,
   curationUpdate,
   getMarkets,
 } from "@/lib/api";
@@ -26,8 +28,10 @@ export default function CurationPage() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [slug, setSlug] = useState("");
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
     if (e instanceof ApiError && e.status === 401) {
@@ -39,6 +43,7 @@ export default function CurationPage() {
 
   const reload = useCallback(
     (marketSlug: string) => {
+      setSelected(new Set());
       curationList(marketSlug).then(setEvents).catch(handleError);
     },
     [handleError],
@@ -59,10 +64,45 @@ export default function CurationPage() {
     reload(slug);
   }, [slug, reload]);
 
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const drafts = events.filter((e) => e.curation_status === "draft");
+
+  function selectAllDrafts() {
+    setSelected(new Set(drafts.map((e) => e.id)));
+  }
+
   async function setStatus(id: string, status: "approved" | "rejected") {
     try {
       await curationUpdate(id, { curation_status: status });
       reload(slug);
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
+  async function bulkDecide(status: "approved" | "rejected") {
+    if (selected.size === 0) return;
+    try {
+      await curationBulk([...selected], status);
+      reload(slug);
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
+  async function refreshSources() {
+    setNotice(null);
+    try {
+      await curationRefresh();
+      setNotice("refreshStarted");
     } catch (e) {
       handleError(e);
     }
@@ -95,21 +135,48 @@ export default function CurationPage() {
   };
 
   return (
-    <main>
+    <main style={{ maxWidth: 960 }}>
       <h1>{t("title")}</h1>
-      <select value={slug} onChange={(e) => setSlug(e.target.value)}>
-        {markets.map((m) => (
-          <option key={m.slug} value={m.slug}>
-            {m.name}
-          </option>
-        ))}
-      </select>
 
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+        <select value={slug} onChange={(e) => setSlug(e.target.value)}>
+          {markets.map((m) => (
+            <option key={m.slug} value={m.slug}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+        <button type="button" onClick={refreshSources}>
+          {t("refresh")}
+        </button>
+        <button type="button" onClick={() => reload(slug)}>
+          {t("reloadList")}
+        </button>
+        <span>{t("draftsCount", { count: drafts.length })}</span>
+      </div>
+
+      {notice !== null && <p>{t(notice)}</p>}
       {error !== null && <p className="error">{t(error)}</p>}
+
+      <div style={{ display: "flex", gap: "0.75rem", margin: "0.75rem 0", flexWrap: "wrap" }}>
+        <button type="button" onClick={selectAllDrafts} disabled={drafts.length === 0}>
+          {t("selectAllDrafts")}
+        </button>
+        <button type="button" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
+          {t("clearSelection")}
+        </button>
+        <button type="button" onClick={() => bulkDecide("approved")} disabled={selected.size === 0}>
+          {t("bulkApprove", { count: selected.size })}
+        </button>
+        <button type="button" onClick={() => bulkDecide("rejected")} disabled={selected.size === 0}>
+          {t("bulkReject", { count: selected.size })}
+        </button>
+      </div>
 
       <table>
         <thead>
           <tr>
+            <th></th>
             <th>{t("name")}</th>
             <th>{t("category")}</th>
             <th>{t("dates")}</th>
@@ -121,6 +188,14 @@ export default function CurationPage() {
         <tbody>
           {events.map((event) => (
             <tr key={event.id}>
+              <td>
+                <input
+                  type="checkbox"
+                  aria-label={event.name}
+                  checked={selected.has(event.id)}
+                  onChange={() => toggle(event.id)}
+                />
+              </td>
               <td>{event.name}</td>
               <td>{event.category}</td>
               <td>
