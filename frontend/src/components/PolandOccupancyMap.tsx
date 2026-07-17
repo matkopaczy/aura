@@ -4,21 +4,22 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { OccupancyPoint, getPublicOccupancy } from "@/lib/api";
 
-// Sekwencyjna skala jednego koloru (magnituda): jasny -> ciemny zielony.
-// Progi obłożenia i kubełki stałe — kolor niesie wartość, tekst zostaje w inku.
-const BINS: { min: number; fill: string }[] = [
-  { min: 0.8, fill: "#17641f" },
-  { min: 0.6, fill: "#3c8a47" },
-  { min: 0.4, fill: "#6fae72" },
-  { min: 0.2, fill: "#a9cfa9" },
-  { min: 0.0, fill: "#d7e8d7" },
+// Kolor mapy = mediana ceny za dobę (dostępna wszędzie, gdzie jest scraping).
+// Obłożenie wymaga skanów wyczerpujących i bywa None — pokazujemy je w etykiecie,
+// gdy znane. Sekwencyjna skala jednego koloru (magnituda): jasny -> ciemny.
+const PRICE_BINS: { min: number; fill: string }[] = [
+  { min: 750, fill: "#17641f" },
+  { min: 550, fill: "#3c8a47" },
+  { min: 400, fill: "#6fae72" },
+  { min: 300, fill: "#a9cfa9" },
+  { min: 0, fill: "#d7e8d7" },
 ];
 const NO_DATA_FILL = "#ffffff";
 const NO_DATA_STROKE = "#b5b5b5";
 
-function fillFor(occupancy: number | null): { fill: string; stroke: string } {
-  if (occupancy === null) return { fill: NO_DATA_FILL, stroke: NO_DATA_STROKE };
-  const bin = BINS.find((b) => occupancy >= b.min) ?? BINS[BINS.length - 1];
+function fillFor(median: number | null): { fill: string; stroke: string } {
+  if (median === null) return { fill: NO_DATA_FILL, stroke: NO_DATA_STROKE };
+  const bin = PRICE_BINS.find((b) => median >= b.min) ?? PRICE_BINS[PRICE_BINS.length - 1];
   return { fill: bin.fill, stroke: "#0b3d14" };
 }
 
@@ -49,6 +50,22 @@ function y(lat: number): number {
   return ((LAT.max - lat) / (LAT.max - LAT.min)) * HEIGHT;
 }
 
+function medianOf(p: OccupancyPoint): number | null {
+  return p.median_price !== null ? Number(p.median_price) : null;
+}
+
+function pointTitle(
+  p: OccupancyPoint,
+  t: (key: string, params?: Record<string, string | number>) => string
+): string {
+  const median = medianOf(p);
+  if (median === null) return `${p.name}: ${t("mapNoData")}`;
+  const price = t("mapPricePerNight", { price: Math.round(median) });
+  return p.occupancy !== null
+    ? `${p.name}: ${price}, ${t("mapOccupancy", { pct: Math.round(p.occupancy * 100) })}`
+    : `${p.name}: ${price}`;
+}
+
 export default function PolandOccupancyMap() {
   const t = useTranslations("home");
   const [points, setPoints] = useState<OccupancyPoint[]>([]);
@@ -60,8 +77,14 @@ export default function PolandOccupancyMap() {
   if (points.length === 0) return null;
 
   const outlinePath =
-    OUTLINE.map(([lng, lat], i) => `${i === 0 ? "M" : "L"}${x(lng).toFixed(1)},${y(lat).toFixed(1)}`).join(" ") + " Z";
-  const withData = points.filter((p) => p.occupancy !== null);
+    OUTLINE.map(
+      ([lng, lat], i) => `${i === 0 ? "M" : "L"}${x(lng).toFixed(1)},${y(lat).toFixed(1)}`
+    ).join(" ") + " Z";
+  // Etykiety bezpośrednie tylko dla najdroższych rynków — bez zaśmiecania mapy.
+  const labeled = points
+    .filter((p) => medianOf(p) !== null)
+    .sort((a, b) => (medianOf(b) as number) - (medianOf(a) as number))
+    .slice(0, 6);
 
   return (
     <section style={{ marginTop: "2rem" }}>
@@ -75,28 +98,24 @@ export default function PolandOccupancyMap() {
       >
         <path d={outlinePath} fill="#f4f6f4" stroke="#c9d2c9" strokeWidth="1.5" />
         {points.map((p) => {
-          const { fill, stroke } = fillFor(p.occupancy);
+          const median = medianOf(p);
+          const { fill, stroke } = fillFor(median);
           return (
             <a key={p.slug} href={`/rynek/${p.slug}`}>
               <circle
                 cx={x(p.center_lng)}
                 cy={y(p.center_lat)}
-                r={p.occupancy !== null ? 9 : 5}
+                r={median !== null ? 9 : 5}
                 fill={fill}
                 stroke={stroke}
                 strokeWidth="1.5"
               >
-                <title>
-                  {p.occupancy !== null
-                    ? `${p.name}: ${Math.round(p.occupancy * 100)}%`
-                    : `${p.name}: ${t("mapNoData")}`}
-                </title>
+                <title>{pointTitle(p, t)}</title>
               </circle>
             </a>
           );
         })}
-        {/* Bezpośrednie etykiety tylko dla rynków z danymi — bez zaśmiecania mapy. */}
-        {withData.map((p) => (
+        {labeled.map((p) => (
           <text
             key={p.slug}
             x={x(p.center_lng) + 12}
@@ -104,21 +123,35 @@ export default function PolandOccupancyMap() {
             fontSize="12"
             fill="#1a1a2e"
           >
-            {p.name} {Math.round((p.occupancy as number) * 100)}%
+            {p.name} {Math.round(medianOf(p) as number)} zł
           </text>
         ))}
       </svg>
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", fontSize: "0.85rem", color: "#555" }}>
+      <div
+        style={{
+          display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap",
+          fontSize: "0.85rem", color: "#555",
+        }}
+      >
         <span>{t("mapLegendLow")}</span>
-        {[...BINS].reverse().map((b) => (
+        {[...PRICE_BINS].reverse().map((b) => (
           <span
             key={b.min}
-            style={{ width: 22, height: 12, background: b.fill, display: "inline-block", borderRadius: 3 }}
+            style={{
+              width: 22, height: 12, background: b.fill,
+              display: "inline-block", borderRadius: 3,
+            }}
           />
         ))}
         <span>{t("mapLegendHigh")}</span>
         <span style={{ marginLeft: "0.75rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <span style={{ width: 12, height: 12, background: NO_DATA_FILL, border: `1.5px solid ${NO_DATA_STROKE}`, borderRadius: "50%", display: "inline-block" }} />
+          <span
+            style={{
+              width: 12, height: 12, background: NO_DATA_FILL,
+              border: `1.5px solid ${NO_DATA_STROKE}`, borderRadius: "50%",
+              display: "inline-block",
+            }}
+          />
           {t("mapNoData")}
         </span>
       </div>

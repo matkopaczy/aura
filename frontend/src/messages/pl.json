@@ -26,11 +26,13 @@
     "loadError": "Nie udało się pobrać danych. Spróbuj ponownie.",
     "reportsTitle": "Raporty rynkowe miast",
     "reportsSubtitle": "Publiczne dane o cenach i obłożeniu — bez logowania:",
-    "mapTitle": "Mapa obłożenia w Polsce",
-    "mapSubtitle": "Które rynki zapełniają się najmocniej w najbliższych 30 dniach. Kliknij miasto, aby zobaczyć raport.",
-    "mapLegendLow": "niskie",
-    "mapLegendHigh": "wysokie",
-    "mapNoData": "brak danych"
+    "mapTitle": "Mapa cen noclegów w Polsce",
+    "mapSubtitle": "Mediana ceny za dobę w najbliższych 30 dniach (z codziennego monitoringu). Kliknij miasto, aby zobaczyć raport.",
+    "mapLegendLow": "taniej",
+    "mapLegendHigh": "drożej",
+    "mapNoData": "brak danych",
+    "mapPricePerNight": "{price} zł/doba",
+    "mapOccupancy": "obłożenie {pct}%"
   },
   "marketReport": {
     "metaTitle": "{city}: ceny najmu krótkoterminowego i mediana rynku | Aura",

@@ -161,3 +161,26 @@ def test_store_day_non_exhaustive_scan_never_marks_unavailable(db_session):
         select(PriceObservation).where(PriceObservation.available.is_(False))
     ).all()
     assert unavailable == []
+
+
+def test_pages_for_market_deeper_on_small_markets():
+    """Małe rynki (promień <= 8 km) skanujemy głębiej — cel: skan wyczerpujący,
+    bo tylko on pozwala liczyć obłożenie. Duże miasta zostają płytko (§6.4)."""
+    from decimal import Decimal as D
+
+    from app.models import CoverageLevel, Market
+    from app.scraping.booking import BookingAdapter
+
+    def _mk(radius):
+        return Market(
+            slug="x", name="X", country_code="PL", currency_code="PLN",
+            timezone="Europe/Warsaw", language="pl",
+            coverage_level=CoverageLevel.RECOMMENDATIONS,
+            center_lat=D("50"), center_lng=D("20"), radius_km=D(str(radius)),
+        )
+
+    adapter = BookingAdapter.__new__(BookingAdapter)  # bez fetchowania robots
+    adapter.pages_per_date = 2
+    assert adapter.pages_for_market(_mk(6.0)) == 4   # kurort
+    assert adapter.pages_for_market(_mk(8.0)) == 4   # granica włącznie
+    assert adapter.pages_for_market(_mk(12.0)) == 2  # duże miasto

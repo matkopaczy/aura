@@ -103,11 +103,12 @@ class OccupancyPoint(BaseModel):
     center_lat: float
     center_lng: float
     occupancy: float | None  # None = rynek bez danych wyczerpujących
+    median_price: Decimal | None  # średnia mediana za dobę (kolor mapy)
 
 
 @router.get("/occupancy", response_model=list[OccupancyPoint])
 def public_occupancy(db: DbSession, days: int = 30) -> list[OccupancyPoint]:
-    """Obłożenie wszystkich rynków — mapa Polski na landingu (§5.1)."""
+    """Mediany + obłożenie wszystkich rynków — mapa Polski na landingu (§5.1)."""
     return [
         OccupancyPoint(
             slug=m.slug,
@@ -115,6 +116,7 @@ def public_occupancy(db: DbSession, days: int = 30) -> list[OccupancyPoint]:
             center_lat=m.center_lat,
             center_lng=m.center_lng,
             occupancy=m.occupancy,
+            median_price=m.median_price,
         )
         for m in occupancy_map(db, days=days)
     ]

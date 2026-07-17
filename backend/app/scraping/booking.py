@@ -68,6 +68,15 @@ def listing_id_from_href(href: str) -> str | None:
     return f"{match.group(1)}/{match.group(2)}" if match else None
 
 
+# Małe rynki (kurorty, mniejsze miasta — promień z markets.radius_km) skanujemy
+# głębiej, żeby osiągnąć skan WYCZERPUJĄCY (ostatnia strona <25 wyników):
+# tylko wtedy wolno liczyć obłożenie (nieobecny=zajęty wymaga pełnej listy).
+# Duże miasta mają setki ofert — tam głębiej nie znaczy wyczerpująco,
+# więc zostaje płycej (§6.4: nie zwiększamy obciążenia bez zysku).
+SMALL_MARKET_RADIUS_KM = 8.0
+SMALL_MARKET_PAGES = 4
+
+
 class BookingAdapter(SourceAdapter):
     source = "booking"
 
@@ -75,6 +84,11 @@ class BookingAdapter(SourceAdapter):
         self.pages_per_date = pages_per_date
         self.request_interval_s = request_interval_s
         self._robots = read_robots(BASE_URL, USER_AGENT)
+
+    def pages_for_market(self, market: Market) -> int:
+        if float(market.radius_km) <= SMALL_MARKET_RADIUS_KM:
+            return max(self.pages_per_date, SMALL_MARKET_PAGES)
+        return self.pages_per_date
 
     def _search_url(self, market: Market, stay_date: datetime.date, offset: int) -> str:
         params = urllib.parse.urlencode(
@@ -102,11 +116,12 @@ class BookingAdapter(SourceAdapter):
                 lambda route: route.abort(),
             )
             page = context.new_page()
+            pages_limit = self.pages_for_market(market)
             try:
                 for stay_date in stay_dates:
                     listings: list[ObservedListing] = []
                     exhaustive = False
-                    for page_no in range(self.pages_per_date):
+                    for page_no in range(pages_limit):
                         url = self._search_url(market, stay_date, offset=page_no * 25)
                         if not self._robots.can_fetch(USER_AGENT, url):
                             raise PermissionError(f"robots.txt zabrania pobrania: {url}")

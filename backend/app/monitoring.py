@@ -277,21 +277,30 @@ class MarketOccupancy:
     center_lat: float
     center_lng: float
     occupancy: float | None  # średnia z dni z danymi; None gdy brak
+    # Średnia mediana ceny za dobę — kolor mapy (dostępna wszędzie, gdzie
+    # jest scraping; obłożenie wymaga skanów wyczerpujących i bywa None).
+    median_price: Decimal | None
 
 
 def occupancy_map(db: Session, days: int = 30) -> list[MarketOccupancy]:
-    """Obłożenie wszystkich rynków — dane pod mapę Polski (landing, §5.1)."""
+    """Obłożenie + mediany wszystkich rynków — dane pod mapę Polski (§5.1)."""
     result = []
     for market in db.scalars(select(Market).order_by(Market.name)):
         series = market_series(db, market, days=days)
-        values = [d.occupancy for d in series if d.occupancy is not None]
+        occupancies = [d.occupancy for d in series if d.occupancy is not None]
+        medians = [d.median_price for d in series if d.median_price is not None]
         result.append(
             MarketOccupancy(
                 slug=market.slug,
                 name=market.name,
                 center_lat=float(market.center_lat),
                 center_lng=float(market.center_lng),
-                occupancy=sum(values) / len(values) if values else None,
+                occupancy=sum(occupancies) / len(occupancies) if occupancies else None,
+                median_price=(
+                    Decimal(sum(medians) / len(medians)).quantize(Decimal("1"))
+                    if medians
+                    else None
+                ),
             )
         )
     return result

@@ -290,6 +290,7 @@ export interface OccupancyPoint {
   center_lat: number;
   center_lng: number;
   occupancy: number | null;
+  median_price: string | null;
 }
 
 export const getPublicOccupancy = () =>
