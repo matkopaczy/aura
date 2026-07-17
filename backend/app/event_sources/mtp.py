@@ -10,11 +10,11 @@ Selektory zweryfikowane na żywo 2026-07-17 (.events__event / __title / __day / 
 
 import datetime
 import re
-import urllib.robotparser
 
 from playwright.sync_api import sync_playwright
 
 from app.event_sources.base import CandidateEvent, EventSource, map_category
+from app.robots import read_robots
 from app.scraping.booking import USER_AGENT
 
 CALENDAR_URL = "https://www.mtp.pl/pl/kalendarium/"
@@ -101,8 +101,7 @@ class MtpPoznanSource(EventSource):
 
     def __init__(self, timeout_ms: int = 60_000):
         self.timeout_ms = timeout_ms
-        self._robots = urllib.robotparser.RobotFileParser("https://www.mtp.pl/robots.txt")
-        self._robots.read()
+        self._robots = read_robots("https://www.mtp.pl", USER_AGENT)
 
     def fetch(self) -> list[CandidateEvent]:
         if not self._robots.can_fetch(USER_AGENT, CALENDAR_URL):

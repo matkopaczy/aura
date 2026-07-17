@@ -55,8 +55,9 @@ def all_sources() -> list[EventSource]:
     """Rejestr aktywnych źródeł eventów (oficjalne kalendarze, §3 fosa)."""
     from app.event_sources.mtp import MtpPoznanSource
     from app.event_sources.tribe import tauron_arena_krakow
+    from app.event_sources.trojmiasto import TrojmiastoConcertsSource
 
-    return [MtpPoznanSource(), tauron_arena_krakow()]
+    return [MtpPoznanSource(), tauron_arena_krakow(), TrojmiastoConcertsSource()]
 
 
 def run() -> None:

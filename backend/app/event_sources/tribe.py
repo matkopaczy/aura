@@ -8,11 +8,11 @@ Czysty JSON, bez Playwrighta. Nowy obiekt na tym pluginie = jedna instancja.
 
 import datetime
 import logging
-import urllib.robotparser
 
 import httpx
 
 from app.event_sources.base import CandidateEvent, EventSource, map_category
+from app.robots import read_robots
 from app.scraping.booking import USER_AGENT
 
 logger = logging.getLogger(__name__)
@@ -74,8 +74,7 @@ class TribeEventsSource(EventSource):
         self.base_url = base_url.rstrip("/")
         self.venue = (venue_lat, venue_lng)
         self.default_category = default_category
-        self._robots = urllib.robotparser.RobotFileParser(f"{self.base_url}/robots.txt")
-        self._robots.read()
+        self._robots = read_robots(self.base_url, USER_AGENT)
 
     def fetch(self) -> list[CandidateEvent]:
         url = f"{self.base_url}{_EVENTS_PATH}"
