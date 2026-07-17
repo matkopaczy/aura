@@ -4,7 +4,8 @@ Webowa aplikacja SaaS (B2B): dynamiczny pricing dla samodzielnych gospodarzy naj
 krótkoterminowego w Polsce. System mówi gospodarzowi, jaką cenę ustawić na każdy
 dzień i dlaczego — po polsku, z lokalnym kontekstem. Nie przejmuje rezerwacji.
 
-Jedyne źródło prawdy o produkcie: specyfikacja v1.0 (lipiec 2026).
+Jedyne źródło prawdy o produkcie: [`docs/spec.md`](docs/spec.md) (v1.1).
+Konwencje pracy w repo (dla ludzi i agentów): [`CLAUDE.md`](CLAUDE.md).
 
 ## Struktura
 

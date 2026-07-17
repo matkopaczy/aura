@@ -75,12 +75,16 @@ def categorize(slogan: str, name: str) -> tuple[str, float]:
 
 
 _EXTRACT_JS = """
-() => Array.from(document.querySelectorAll('.eventsmain__center__item')).map(item => ({
-  day: item.querySelector('.eventsmain__center__item__title__day')?.innerText?.trim() || '',
-  slogan: item.querySelector('.eventsmain__center__item__title__promo__slogan')?.innerText?.trim() || '',
-  alt: item.querySelector('img')?.getAttribute('alt') || '',
-  href: (item.querySelector('a[href*="/wydarzenia/"]') || item.closest('a[href*="/wydarzenia/"]'))?.href || '',
-}))
+() => Array.from(document.querySelectorAll('.eventsmain__center__item')).map(item => {
+  const q = sel => item.querySelector(sel);
+  const link = q('a[href*="/wydarzenia/"]') || item.closest('a[href*="/wydarzenia/"]');
+  return {
+    day: q('.eventsmain__center__item__title__day')?.innerText?.trim() || '',
+    slogan: q('.eventsmain__center__item__title__promo__slogan')?.innerText?.trim() || '',
+    alt: q('img')?.getAttribute('alt') || '',
+    href: link?.href || '',
+  };
+})
 """
 
 

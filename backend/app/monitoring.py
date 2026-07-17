@@ -283,7 +283,8 @@ def occupancy_map(db: Session, days: int = 30) -> list[MarketOccupancy]:
     """Obłożenie wszystkich rynków — dane pod mapę Polski (landing, §5.1)."""
     result = []
     for market in db.scalars(select(Market).order_by(Market.name)):
-        values = [d.occupancy for d in market_series(db, market, days=days) if d.occupancy is not None]
+        series = market_series(db, market, days=days)
+        values = [d.occupancy for d in series if d.occupancy is not None]
         result.append(
             MarketOccupancy(
                 slug=market.slug,

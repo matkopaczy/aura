@@ -14,9 +14,9 @@ import re
 import httpx
 
 from app.event_sources.base import (
+    POLISH_GENITIVE_MONTHS,
     CandidateEvent,
     EventSource,
-    POLISH_GENITIVE_MONTHS,
     category_from_name,
     drop_recurring_series,
 )

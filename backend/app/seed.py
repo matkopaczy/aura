@@ -122,7 +122,8 @@ FERIE_2027: list[tuple[str, datetime.date, datetime.date]] = [
      _D(2027, 1, 18), _D(2027, 1, 31)),
     ("Ferie zimowe — tura 2 (mazowieckie, pomorskie, świętokrzyskie, lubelskie)",
      _D(2027, 2, 1), _D(2027, 2, 14)),
-    ("Ferie zimowe — tura 3 (lubuskie, kujawsko-pomorskie, warmińsko-mazurskie, wielkopolskie, zachodniopomorskie, małopolskie)",
+    ("Ferie zimowe — tura 3 (lubuskie, kujawsko-pomorskie, warmińsko-mazurskie, "
+     "wielkopolskie, zachodniopomorskie, małopolskie)",
      _D(2027, 2, 15), _D(2027, 2, 28)),
 ]
 
