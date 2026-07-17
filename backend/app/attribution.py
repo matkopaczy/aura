@@ -59,7 +59,20 @@ def update_outcomes(db: Session, prop: Property) -> int:
 class AttributionSummary:
     accepted_count: int
     sold_count: int
-    extra_revenue: Decimal  # suma dodatnich delt sprzedanych podwyżek
+    extra_revenue: Decimal  # wariant pełny: suma dodatnich delt sprzedanych podwyżek
+    # Wariant konserwatywny (§3.4): liczymy tylko noce sprzedane przy cenie
+    # ≥ mediana konkurencji w momencie rekomendacji. Odcina przypadki, w których
+    # obiekt sprzedałby się i tak — najostrożniejsza dolna granica atrybucji.
+    conservative_sold_count: int
+    conservative_revenue: Decimal
+
+
+def _positive_delta(rec: Recommendation) -> Decimal:
+    return rec.revenue_delta if rec.revenue_delta and rec.revenue_delta > 0 else Decimal("0")
+
+
+def _at_or_above_median(rec: Recommendation) -> bool:
+    return rec.competitor_median is not None and rec.recommended_price >= rec.competitor_median
 
 
 def summarize(
@@ -73,10 +86,15 @@ def summarize(
         query = query.where(Recommendation.stay_date >= since)
     accepted = db.scalars(query).all()
     sold = [r for r in accepted if r.outcome_sold]
-    extra = sum(
-        (r.revenue_delta for r in sold if r.revenue_delta and r.revenue_delta > 0),
-        Decimal("0"),
-    )
+    extra = sum((_positive_delta(r) for r in sold), Decimal("0"))
+
+    conservative = [r for r in sold if _at_or_above_median(r)]
+    conservative_extra = sum((_positive_delta(r) for r in conservative), Decimal("0"))
+
     return AttributionSummary(
-        accepted_count=len(accepted), sold_count=len(sold), extra_revenue=extra
+        accepted_count=len(accepted),
+        sold_count=len(sold),
+        extra_revenue=extra,
+        conservative_sold_count=len(conservative),
+        conservative_revenue=conservative_extra,
     )

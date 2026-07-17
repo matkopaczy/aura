@@ -56,6 +56,9 @@ class RecommendationDraft:
     factors: list[Factor]
     explanation_template_key: str
     explanation_params: dict
+    # Mediana konkurencji użyta do pozycjonowania — pod licznik konserwatywny (§3.4).
+    # None, gdy brak danych rynkowych (wtedy nie wliczamy do wariantu konserwatywnego).
+    competitor_median: Decimal | None = None
 
 
 def _day_of_week_factor(stay_date: datetime.date) -> Factor | None:
@@ -206,6 +209,7 @@ def compute_recommendation(
         price=clamped,
         previous_price=prop.base_price,
         factors=factors,
+        competitor_median=median,
         explanation_template_key="v1",
         explanation_params={
             "factors": [

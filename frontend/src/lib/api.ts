@@ -227,6 +227,8 @@ export interface Attribution {
   accepted_count: number;
   sold_count: number;
   extra_revenue: string;
+  conservative_sold_count: number;
+  conservative_revenue: string;
   currency_code: string;
 }
 

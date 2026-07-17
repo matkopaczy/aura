@@ -172,13 +172,26 @@ export default function DashboardPage() {
       {attribution !== null && (
         <section style={{ background: "#f0f7f0", padding: "1rem", borderRadius: 8, marginBottom: "1.5rem" }}>
           <strong>{t("counterTitle")}</strong>
-          <p style={{ fontSize: "1.6rem", margin: "0.3rem 0" }}>
-            {Number(attribution.extra_revenue).toFixed(0)} {attribution.currency_code}
-          </p>
-          <small>
-            {t("counterAccepted", { count: attribution.accepted_count })},{" "}
-            {t("counterSold", { count: attribution.sold_count })}
-          </small>
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", margin: "0.5rem 0" }}>
+            <div>
+              <small style={{ color: "#2f6b2f" }}>{t("counterConservativeLabel")}</small>
+              <p style={{ fontSize: "1.8rem", margin: "0.1rem 0", fontWeight: 700 }}>
+                {Number(attribution.conservative_revenue).toFixed(0)} {attribution.currency_code}
+              </p>
+              <small>{t("counterConservativeSold", { count: attribution.conservative_sold_count })}</small>
+            </div>
+            <div style={{ opacity: 0.75 }}>
+              <small>{t("counterFullLabel")}</small>
+              <p style={{ fontSize: "1.4rem", margin: "0.1rem 0" }}>
+                {Number(attribution.extra_revenue).toFixed(0)} {attribution.currency_code}
+              </p>
+              <small>
+                {t("counterAccepted", { count: attribution.accepted_count })},{" "}
+                {t("counterSold", { count: attribution.sold_count })}
+              </small>
+            </div>
+          </div>
+          <small style={{ display: "block", color: "#555" }}>{t("counterConservativeHint")}</small>
         </section>
       )}
 

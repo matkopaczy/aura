@@ -50,6 +50,9 @@ class AttributionResponse(BaseModel):
     accepted_count: int
     sold_count: int
     extra_revenue: Decimal
+    # Wariant konserwatywny (§3.4): tylko noce sprzedane przy cenie ≥ mediana konkurencji.
+    conservative_sold_count: int
+    conservative_revenue: Decimal
     currency_code: str
 
 
@@ -141,6 +144,7 @@ def generate_for_property(db: Session, prop: Property, days: int = 60) -> list[R
                 currency_code=prop.currency_code,
                 recommended_price=draft.price,
                 previous_price=draft.previous_price,
+                competitor_median=draft.competitor_median,
                 explanation_template_key=draft.explanation_template_key,
                 explanation_params=draft.explanation_params,
             )
@@ -148,6 +152,7 @@ def generate_for_property(db: Session, prop: Property, days: int = 60) -> list[R
         else:
             rec.recommended_price = draft.price
             rec.previous_price = draft.previous_price
+            rec.competitor_median = draft.competitor_median
             rec.explanation_template_key = draft.explanation_template_key
             rec.explanation_params = draft.explanation_params
         result.append(rec)
@@ -191,6 +196,8 @@ def attribution(
         accepted_count=summary.accepted_count,
         sold_count=summary.sold_count,
         extra_revenue=summary.extra_revenue,
+        conservative_sold_count=summary.conservative_sold_count,
+        conservative_revenue=summary.conservative_revenue,
         currency_code=prop.currency_code,
     )
 

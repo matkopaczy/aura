@@ -28,13 +28,17 @@ def _property_with_recs(client, db_session):
     return market, headers, prop
 
 
-def _accepted_rec(db, prop, stay_date, previous=Decimal("200"), price=Decimal("260")):
+def _accepted_rec(
+    db, prop, stay_date, previous=Decimal("200"), price=Decimal("260"),
+    competitor_median=None,
+):
     rec = Recommendation(
         account_id=prop.account_id,
         property_id=prop.id,
         stay_date=stay_date,
         recommended_price=price,
         previous_price=previous,
+        competitor_median=competitor_median,
         currency_code="PLN",
         explanation_template_key="v1",
         explanation_params={"factors": [{"key": "weekend", "pct": 10}]},
@@ -44,6 +48,18 @@ def _accepted_rec(db, prop, stay_date, previous=Decimal("200"), price=Decimal("2
     db.add(rec)
     db.commit()
     return rec
+
+
+def _mark_sold(db, prop, stay_date):
+    db.add(
+        CalendarDay(
+            account_id=prop.account_id,
+            property_id=prop.id,
+            stay_date=stay_date,
+            synced_at=datetime.datetime.now(datetime.UTC),
+        )
+    )
+    db.commit()
 
 
 def test_attribution_sold_and_unsold(client, db_session):
@@ -77,13 +93,40 @@ def test_attribution_sold_and_unsold(client, db_session):
     assert update_outcomes(db_session, prop) == 0
 
 
+def test_attribution_conservative_variant(client, db_session):
+    """§3.4: wariant konserwatywny liczy tylko noce sprzedane przy cenie ≥ mediana.
+
+    - noc A: cena 260 ≥ mediana 250 -> pełny I konserwatywny
+    - noc B: cena 260 < mediana 300 -> tylko pełny (mogłaby sprzedać się i tak)
+    - noc C: mediana nieznana (None) -> tylko pełny (nie potwierdzamy przewagi)
+    """
+    _, _, prop = _property_with_recs(client, db_session)
+    day_a = YESTERDAY
+    day_b = YESTERDAY - datetime.timedelta(days=1)
+    day_c = YESTERDAY - datetime.timedelta(days=2)
+    _accepted_rec(db_session, prop, day_a, competitor_median=Decimal("250"))
+    _accepted_rec(db_session, prop, day_b, competitor_median=Decimal("300"))
+    _accepted_rec(db_session, prop, day_c, competitor_median=None)
+    for d in (day_a, day_b, day_c):
+        _mark_sold(db_session, prop, d)
+
+    assert update_outcomes(db_session, prop) == 3
+    summary = summarize(db_session, prop)
+    assert summary.sold_count == 3
+    assert summary.extra_revenue == Decimal("180")  # 3 × 60
+    assert summary.conservative_sold_count == 1  # tylko noc A
+    assert summary.conservative_revenue == Decimal("60")
+
+
 def test_attribution_endpoint(client, db_session):
     _, headers, prop = _property_with_recs(client, db_session)
-    _accepted_rec(db_session, prop, YESTERDAY)
+    _accepted_rec(db_session, prop, YESTERDAY, competitor_median=Decimal("250"))
     r = client.get(f"/api/recommendations/attribution/{prop.id}", headers=headers)
     assert r.status_code == 200
     body = r.json()
     assert body["accepted_count"] == 1
+    assert body["conservative_sold_count"] == 0  # jeszcze nie rozstrzygnięto sprzedaży
+    assert body["conservative_revenue"] == "0"
     assert body["currency_code"] == "PLN"
 
 

@@ -32,6 +32,8 @@ class Recommendation(Base, TenantMixin, TimestampMixin):
     stay_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     recommended_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     previous_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    # Mediana konkurencji w momencie rekomendacji — pod licznik konserwatywny (§3.4, §6.3).
+    competitor_median: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
     explanation_template_key: Mapped[str] = mapped_column(String(100), nullable=False)
     explanation_params: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
