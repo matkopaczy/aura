@@ -54,8 +54,10 @@ def ingest_events(db: Session, source: EventSource) -> int:
 def all_sources() -> list[EventSource]:
     """Rejestr aktywnych źródeł eventów (oficjalne kalendarze, §3 fosa)."""
     from app.event_sources.atlasarena import AtlasArenaSource
+    from app.event_sources.katowice import mck_katowice, spodek_katowice
     from app.event_sources.mtp import MtpPoznanSource
     from app.event_sources.pge import PgeNarodowySource
+    from app.event_sources.stulecia import HalaStuleciaSource
     from app.event_sources.tribe import tauron_arena_krakow
     from app.event_sources.trojmiasto import tricity_sources
 
@@ -65,6 +67,9 @@ def all_sources() -> list[EventSource]:
         *tricity_sources(),  # Gdańsk/Gdynia/Sopot: koncerty + sport per miasto
         AtlasArenaSource(),  # Łódź: koncerty + sport z Atlas Areny
         PgeNarodowySource(),  # Warszawa: wydarzenia masowe PGE Narodowego
+        HalaStuleciaSource(),  # Wrocław: Hala Stulecia (kongresy, koncerty, targi)
+        spodek_katowice(),  # Katowice: Spodek
+        mck_katowice(),  # Katowice: MCK (kongresy, targi)
     ]
 
 

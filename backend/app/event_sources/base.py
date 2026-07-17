@@ -6,6 +6,7 @@ kurator zatwierdza w /admin/events. To nasz fosa i legalnie czyste (§6.4).
 """
 
 import datetime
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -24,6 +25,15 @@ def map_category(cat_text: str, default: str = "eventy") -> tuple[str, float]:
         if key.startswith(slug[:6]):
             return slug, impact
     return default, CATEGORY_IMPACT.get(default, 0.4)
+
+
+# Dopełniacz polskich miesięcy ("18 lipca 2026") — wspólny dla źródeł
+# parsujących daty słowne (mtp, pge, katowice, stulecia).
+POLISH_GENITIVE_MONTHS = {
+    "stycznia": 1, "lutego": 2, "marca": 3, "kwietnia": 4, "maja": 5, "czerwca": 6,
+    "lipca": 7, "sierpnia": 8, "września": 9, "wrzesnia": 9, "października": 10,
+    "pazdziernika": 10, "listopada": 11, "grudnia": 12,
+}
 
 
 # Słowa w NAZWIE wydarzenia jednoznacznie wskazujące sport — dla źródeł aren,
@@ -52,6 +62,26 @@ class CandidateEvent:
     venue_lat: float | None
     venue_lng: float | None
     district: str | None = None
+
+
+def _series_key(name: str) -> str:
+    """Prefiks serii: tekst przed pierwszym ':' lub '|' ('Lato na Pergoli: Joga')."""
+    return re.split(r"[:|]", name, maxsplit=1)[0].strip().lower()
+
+
+def drop_recurring_series(
+    candidates: list[CandidateEvent], threshold: int = 4
+) -> list[CandidateEvent]:
+    """Odrzuca serie cykliczne (joga, jam session, cotygodniowe strefy).
+
+    Ten sam prefiks tytułu >= threshold razy w jednej partii = zajęcia
+    cykliczne venue, nie wydarzenie popytowe — nie zalewamy kuratora.
+    """
+    counts: dict[str, int] = {}
+    for cand in candidates:
+        key = _series_key(cand.name)
+        counts[key] = counts.get(key, 0) + 1
+    return [c for c in candidates if counts[_series_key(c.name)] < threshold]
 
 
 class EventSource(ABC):
