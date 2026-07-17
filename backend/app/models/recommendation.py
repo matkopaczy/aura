@@ -16,6 +16,13 @@ class RecommendationStatus(enum.StrEnum):
     EXPIRED = "expired"
 
 
+class DecisionChannel(enum.StrEnum):
+    """Kanałem, którym zapadła decyzja klienta (§6.3): panel czy e-mail."""
+
+    DASHBOARD = "dashboard"
+    EMAIL = "email"
+
+
 class Recommendation(Base, TenantMixin, TimestampMixin):
     """Rekomendacja cenowa z pełnym stanem pod atrybucję (§3 pkt 4).
 
@@ -43,5 +50,8 @@ class Recommendation(Base, TenantMixin, TimestampMixin):
         nullable=False,
     )
     decided_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
+    decision_channel: Mapped[DecisionChannel | None] = mapped_column(
+        Enum(DecisionChannel, native_enum=False, length=20)
+    )
     outcome_sold: Mapped[bool | None] = mapped_column(Boolean)  # NULL = jeszcze nieznany
     revenue_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))

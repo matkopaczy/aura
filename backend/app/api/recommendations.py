@@ -15,6 +15,7 @@ from app.ical import booked_dates, is_orphan_night
 from app.models import (
     CoverageLevel,
     CurationStatus,
+    DecisionChannel,
     Event,
     Market,
     Property,
@@ -223,5 +224,6 @@ def decide(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="already_decided")
     rec.status = RecommendationStatus(body.decision)
     rec.decided_at = utcnow()
+    rec.decision_channel = DecisionChannel.DASHBOARD
     db.commit()
     return _to_response(rec)

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.action_tokens import issue_tokens
 from app.attribution import summarize
 from app.config import get_settings
 from app.i18n import render_factor, t
@@ -60,6 +61,7 @@ def render_weekly_report(db: Session, prop: Property, locale: str = "pl") -> tup
         .order_by(Recommendation.stay_date)
     ).all()
 
+    settings = get_settings()
     lines = [t("email.weekly.greeting", locale=locale), ""]
     if pending:
         lines.append(t("email.weekly.pending_header", locale=locale, count=len(pending)))
@@ -74,6 +76,16 @@ def render_weekly_report(db: Session, prop: Property, locale: str = "pl") -> tup
                     previous=rec.previous_price,
                     price=rec.recommended_price,
                     reason=reason or "-",
+                )
+            )
+            # One-tap decyzja bez logowania (§8.2): para tokenów w linkach.
+            tokens = issue_tokens(db, rec, ttl_days=settings.action_token_days)
+            lines.append(
+                t(
+                    "email.weekly.decide_line",
+                    locale=locale,
+                    accept=f"{settings.api_public_url}/api/actions/{tokens['accept']}",
+                    reject=f"{settings.api_public_url}/api/actions/{tokens['reject']}",
                 )
             )
     else:

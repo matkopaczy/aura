@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     access_token_minutes: int = 30
     cors_origins: list[str] = ["http://localhost:3000"]
     dashboard_url: str = "http://localhost:3000"
+    # Publiczny adres API — bazowy URL linków decyzji z e-maila (§8.2).
+    api_public_url: str = "http://localhost:8000"
+    # TTL tokenów decyzji z e-maila (§9): krótki, dopasowany do cyklu tygodniowego.
+    action_token_days: int = 7
     # E-mail (§8.2). Brak smtp_host = wysyłka niemożliwa; joby mailowe padają głośno.
     smtp_host: str | None = None
     smtp_port: int = 587
