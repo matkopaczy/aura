@@ -56,13 +56,12 @@ def all_sources() -> list[EventSource]:
     from app.event_sources.atlasarena import AtlasArenaSource
     from app.event_sources.mtp import MtpPoznanSource
     from app.event_sources.tribe import tauron_arena_krakow
-    from app.event_sources.trojmiasto import trojmiasto_koncerty, trojmiasto_sport
+    from app.event_sources.trojmiasto import tricity_sources
 
     return [
         MtpPoznanSource(),  # Poznań: targi + wszystkie kategorie MTP (w tym sport)
         tauron_arena_krakow(),  # Kraków: koncerty + sport z areny (pełny kalendarz)
-        trojmiasto_koncerty(),
-        trojmiasto_sport(),  # Trójmiasto: koncerty + sport
+        *tricity_sources(),  # Gdańsk/Gdynia/Sopot: koncerty + sport per miasto
         AtlasArenaSource(),  # Łódź: koncerty + sport z Atlas Areny
     ]
 

@@ -66,3 +66,28 @@ def test_parse_articles_sport_category():
     assert len(out) == 1
     assert out[0].category == "sport"
     assert out[0].impact_strength == 0.7
+
+
+def test_tricity_sources_cover_three_markets():
+    from app.event_sources.trojmiasto import tricity_sources
+
+    sources = tricity_sources()
+    assert len(sources) == 6  # 3 miasta x (koncerty, sport)
+    assert {s.market_slug for s in sources} == {"gdansk", "gdynia", "sopot"}
+    assert len({s.source for s in sources}) == 6  # unikalne slugi źródeł
+
+
+def test_city_filter_routes_candidates():
+    """Kandydat trafia tylko do rynku swojego miasta; spoza trzech miast odpada."""
+    from app.event_sources.trojmiasto import TrojmiastoSource
+
+    src = TrojmiastoSource.__new__(TrojmiastoSource)  # bez fetchu sieci/robots
+    src.city = "gdynia"
+    cards = [
+        {"title": "Open'er", "month": "LIP", "day": "1-4", "city": "Gdynia,"},
+        {"title": "Jarmark", "month": "LIP", "day": "25", "city": "Gdańsk,"},
+        {"title": "Festyn", "month": "LIP", "day": "20", "city": "Rumia,"},
+    ]
+    candidates = parse_articles(cards, TODAY)
+    routed = [c for c in candidates if (c.district or "").lower() == src.city]
+    assert [c.name for c in routed] == ["Open'er"]

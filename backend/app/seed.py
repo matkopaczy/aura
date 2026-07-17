@@ -29,9 +29,13 @@ _M = CoverageLevel.MONITORING
 # (miasta wojewódzkie + kurorty). Czynnik eventów poza pierwszą falą zasilany
 # ręczną kuracją do czasu dodania źródeł per miasto.
 MARKETS: list[tuple[str, str, float, float, float, CoverageLevel]] = [
-    # Pierwsza fala rekomendacji (mają też automatyczne źródła eventów)
+    # Pierwsza fala rekomendacji (mają też automatyczne źródła eventów).
+    # Trójmiasto rozbite na osobne rynki (decyzja założyciela 2026-07-17):
+    # gospodarz konkuruje w swoim mieście, a SEO szuka "Gdańsk", nie "Trójmiasto".
     ("krakow", "Kraków", 50.0614, 19.9366, 12.0, _R),
-    ("trojmiasto", "Trójmiasto", 54.4416, 18.5601, 20.0, _R),
+    ("gdansk", "Gdańsk", 54.3520, 18.6466, 10.0, _R),
+    ("gdynia", "Gdynia", 54.5189, 18.5305, 8.0, _R),
+    ("sopot", "Sopot", 54.4418, 18.5601, 5.0, _R),
     ("poznan", "Poznań", 52.4064, 16.9252, 12.0, _R),
     # Miasta wojewódzkie
     ("warszawa", "Warszawa", 52.2297, 21.0122, 15.0, _R),
@@ -102,11 +106,11 @@ CITY_EVENTS: list[tuple] = [
      _D(2027, 2, 2), _D(2027, 2, 5), 0.7, _DRAFT),
     ("poznan", "Malta Festival", "festiwal", None,
      _D(2027, 6, 18), _D(2027, 6, 27), 0.6, _DRAFT),
-    ("trojmiasto", "Jarmark św. Dominika", "jarmark", "Gdańsk Śródmieście",
+    ("gdansk", "Jarmark św. Dominika", "jarmark", "Śródmieście",
      _D(2026, 7, 25), _D(2026, 8, 16), 0.7, _DRAFT),
-    ("trojmiasto", "Jarmark Bożonarodzeniowy", "jarmark", "Gdańsk Śródmieście",
+    ("gdansk", "Jarmark Bożonarodzeniowy", "jarmark", "Śródmieście",
      _D(2026, 11, 20), _D(2026, 12, 23), 0.5, _DRAFT),
-    ("trojmiasto", "Open'er Festival", "festiwal", "Gdynia",
+    ("gdynia", "Open'er Festival", "festiwal", None,
      _D(2027, 6, 30), _D(2027, 7, 3), 0.9, _DRAFT),
 ]
 
@@ -136,8 +140,8 @@ VENUES: dict[tuple[str, str], tuple[float, float]] = {
     ("poznan", "Poznań Game Arena"): (52.3939, 16.8820),  # MTP
     ("poznan", "Budma"): (52.3939, 16.8820),  # MTP
     ("poznan", "Malta Festival"): (52.4030, 16.9660),  # Jezioro Malta
-    ("trojmiasto", "Open'er Festival"): (54.5790, 18.4890),  # Gdynia-Kosakowo
-    ("trojmiasto", "Jarmark św. Dominika"): (54.3490, 18.6530),  # Gdańsk, Główne Miasto
+    ("gdynia", "Open'er Festival"): (54.5790, 18.4890),  # Gdynia-Kosakowo
+    ("gdansk", "Jarmark św. Dominika"): (54.3490, 18.6530),  # Główne Miasto
     ("krakow", "Wianki"): (50.0540, 19.9350),  # Wawel / bulwary
     ("krakow", "Jarmark Bożonarodzeniowy"): (50.0617, 19.9373),  # Rynek Główny
 }

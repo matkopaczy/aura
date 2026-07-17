@@ -1,10 +1,10 @@
-"""Źródło eventów: trojmiasto.pl — regionalny agregator (koncerty).
+"""Źródło eventów: trojmiasto.pl — regionalny agregator (koncerty, sport).
 
-Jedno źródło pokrywa cały rynek Trójmiasta (Gdańsk/Gdynia/Sopot). Listing
+Gdańsk/Gdynia/Sopot to od 2026-07-17 OSOBNE rynki — jeden listing agregatora
+zasila trzy rynki: instancja źródła per (miasto, kategoria), a miasto z karty
+decyduje o przynależności (wydarzenia spoza trzech miast odpadają). Listing
 /imprezy/koncerty/ jest SSR i dozwolony przez robots.txt (blokuje /_ajax/,
 /ajax/, nie /imprezy/). Parsujemy pierwszą stronę (najbliższe wydarzenia).
-Miasto z karty -> współrzędne centrum miasta jako venue (Trójmiasto jest
-rozległe, więc odległość od miasta ma znaczenie dla czynnika venue).
 
 Selektory zweryfikowane na żywo 2026-07-17 (.event__item__title / __location__city,
 .calendar-icon__icon__month / __day).
@@ -107,18 +107,18 @@ _EXTRACT_JS = """
 
 
 class TrojmiastoSource(EventSource):
-    """Listing trojmiasto.pl dla jednej kategorii (np. koncerty, sport)."""
-
-    market_slug = "trojmiasto"
+    """Listing trojmiasto.pl dla jednej kategorii, filtrowany do jednego miasta."""
 
     def __init__(
         self, source: str, listing_path: str, category: str, impact: float,
-        timeout_ms: int = 60_000,
+        market_slug: str, city: str, timeout_ms: int = 60_000,
     ):
         self.source = source
         self.listing_url = f"{BASE_URL}{listing_path}"
         self.category = category
         self.impact = impact
+        self.market_slug = market_slug
+        self.city = city.lower()
         self.timeout_ms = timeout_ms
         self._robots = read_robots(BASE_URL, USER_AGENT)
 
@@ -140,12 +140,30 @@ class TrojmiastoSource(EventSource):
             finally:
                 context.close()
                 browser.close()
-        return parse_articles(cards, datetime.date.today(), self.category, self.impact)
+        candidates = parse_articles(cards, datetime.date.today(), self.category, self.impact)
+        # Miasto z karty decyduje o rynku; spoza Gdańska/Gdyni/Sopotu -> odpada.
+        return [c for c in candidates if (c.district or "").lower() == self.city]
 
 
-def trojmiasto_koncerty() -> TrojmiastoSource:
-    return TrojmiastoSource("trojmiasto-koncerty", "/imprezy/koncerty/", "koncert", 0.6)
+# Miasta Trójmiasta jako osobne rynki: instancja per (miasto, kategoria).
+TRICITY_SLUGS = ["gdansk", "gdynia", "sopot"]
+_CITY_NAMES = {"gdansk": "Gdańsk", "gdynia": "Gdynia", "sopot": "Sopot"}
+_LISTINGS = [
+    ("koncerty", "/imprezy/koncerty/", "koncert", 0.6),
+    ("sport", "/imprezy/sport-rekreacja/", "sport", 0.7),
+]
 
 
-def trojmiasto_sport() -> TrojmiastoSource:
-    return TrojmiastoSource("trojmiasto-sport", "/imprezy/sport-rekreacja/", "sport", 0.7)
+def tricity_sources() -> list[TrojmiastoSource]:
+    return [
+        TrojmiastoSource(
+            source=f"trojmiasto-{kind}-{slug}",
+            listing_path=path,
+            category=category,
+            impact=impact,
+            market_slug=slug,
+            city=_CITY_NAMES[slug],
+        )
+        for slug in TRICITY_SLUGS
+        for kind, path, category, impact in _LISTINGS
+    ]
