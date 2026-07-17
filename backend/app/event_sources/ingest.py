@@ -51,16 +51,27 @@ def ingest_events(db: Session, source: EventSource) -> int:
     return created
 
 
+def all_sources() -> list[EventSource]:
+    """Rejestr aktywnych źródeł eventów (oficjalne kalendarze, §3 fosa)."""
+    from app.event_sources.mtp import MtpPoznanSource
+    from app.event_sources.tribe import tauron_arena_krakow
+
+    return [MtpPoznanSource(), tauron_arena_krakow()]
+
+
 def run() -> None:
     """Wejście do crona/harmonogramu: zasila ze wszystkich źródeł eventów."""
     from sqlalchemy.orm import Session as _Session
 
     from app.db import get_engine
-    from app.event_sources.mtp import MtpPoznanSource
 
     logging.basicConfig(level=logging.INFO)
     with _Session(get_engine()) as db:
-        ingest_events(db, MtpPoznanSource())
+        for source in all_sources():
+            try:
+                ingest_events(db, source)
+            except Exception:  # jedno źródło nie może wywalić reszty
+                logger.exception("Zasilanie źródła %s nieudane", source.source)
 
 
 if __name__ == "__main__":

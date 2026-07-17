@@ -9,6 +9,22 @@ import datetime
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+# Domyślna siła wpływu per kategoria (kurator koryguje). Targi/sport najsilniej
+# podbijają popyt hotelowy; spektakle najsłabiej.
+CATEGORY_IMPACT = {
+    "targi": 0.7, "sport": 0.7, "koncert": 0.6, "koncerty": 0.6,
+    "konferencje": 0.5, "eventy": 0.4, "spektakle": 0.3,
+}
+
+
+def map_category(cat_text: str, default: str = "eventy") -> tuple[str, float]:
+    """Tekst kategorii -> (slug kategorii, domyślna siła wpływu)."""
+    key = cat_text.strip().lower()
+    for slug, impact in CATEGORY_IMPACT.items():
+        if key.startswith(slug[:6]):
+            return slug, impact
+    return default, CATEGORY_IMPACT.get(default, 0.4)
+
 
 @dataclass(frozen=True)
 class CandidateEvent:

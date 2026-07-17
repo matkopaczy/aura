@@ -14,7 +14,7 @@ import urllib.robotparser
 
 from playwright.sync_api import sync_playwright
 
-from app.event_sources.base import CandidateEvent, EventSource
+from app.event_sources.base import CandidateEvent, EventSource, map_category
 from app.scraping.booking import USER_AGENT
 
 CALENDAR_URL = "https://www.mtp.pl/pl/kalendarium/"
@@ -27,25 +27,9 @@ POLISH_MONTHS = {
     "pazdziernika": 10, "listopada": 11, "grudnia": 12,
 }
 
-# Domyślna siła wpływu per kategoria (kurator koryguje). Targi/sport najsilniej
-# podbijają popyt hotelowy; spektakle najsłabiej.
-CATEGORY_IMPACT = {
-    "targi": 0.7, "sport": 0.7, "koncert": 0.6, "koncerty": 0.6,
-    "konferencje": 0.5, "eventy": 0.4, "spektakle": 0.3,
-}
-
 
 def month_number(name: str) -> int | None:
     return POLISH_MONTHS.get(name.strip().lower())
-
-
-def map_category(cat_text: str) -> tuple[str, float]:
-    """Tekst kategorii z karty -> (slug kategorii, domyślna siła wpływu)."""
-    key = cat_text.strip().lower()
-    for slug, impact in CATEGORY_IMPACT.items():
-        if key.startswith(slug[:6]):
-            return slug, impact
-    return "eventy", 0.4
 
 
 def infer_dates(
