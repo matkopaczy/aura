@@ -58,6 +58,7 @@ def all_sources() -> list[EventSource]:
     from app.event_sources.mtp import MtpPoznanSource
     from app.event_sources.pge import PgeNarodowySource
     from app.event_sources.stulecia import HalaStuleciaSource
+    from app.event_sources.tarczynski import TarczynskiArenaSource
     from app.event_sources.tribe import tauron_arena_krakow
     from app.event_sources.trojmiasto import tricity_sources
 
@@ -68,6 +69,7 @@ def all_sources() -> list[EventSource]:
         AtlasArenaSource(),  # Łódź: koncerty + sport z Atlas Areny
         PgeNarodowySource(),  # Warszawa: wydarzenia masowe PGE Narodowego
         HalaStuleciaSource(),  # Wrocław: Hala Stulecia (kongresy, koncerty, targi)
+        TarczynskiArenaSource(),  # Wrocław: stadion (mecze, mega-koncerty)
         spodek_katowice(),  # Katowice: Spodek
         mck_katowice(),  # Katowice: MCK (kongresy, targi)
     ]

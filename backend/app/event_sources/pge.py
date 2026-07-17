@@ -16,7 +16,7 @@ import re
 
 import httpx
 
-from app.event_sources.base import CandidateEvent, EventSource, category_from_name
+from app.event_sources.base import CandidateEvent, EventSource, merge_consecutive_days
 from app.robots import read_robots
 from app.scraping.booking import USER_AGENT
 
@@ -68,37 +68,7 @@ def parse_month_html(html: str) -> list[tuple[datetime.date, str]]:
 
 def merge_consecutive(days: list[tuple[datetime.date, str]]) -> list[CandidateEvent]:
     """Ten sam tytuł w kolejnych dniach -> jeden event z zakresem dat."""
-    by_title: dict[str, list[datetime.date]] = {}
-    for date, title in days:
-        by_title.setdefault(title, []).append(date)
-
-    result: list[CandidateEvent] = []
-    for title, dates in by_title.items():
-        dates = sorted(set(dates))
-        start = end = dates[0]
-        ranges = []
-        for date in dates[1:]:
-            if (date - end).days == 1:
-                end = date
-            else:
-                ranges.append((start, end))
-                start = end = date
-        ranges.append((start, end))
-        category, impact = category_from_name(title)
-        for start, end in ranges:
-            result.append(
-                CandidateEvent(
-                    name=title,
-                    category=category,
-                    start_date=start,
-                    end_date=end,
-                    impact_strength=impact,
-                    venue_lat=PGE_VENUE[0],
-                    venue_lng=PGE_VENUE[1],
-                    district="Praga-Południe",
-                )
-            )
-    return result
+    return merge_consecutive_days(days, venue=PGE_VENUE, district="Praga-Południe")
 
 
 class PgeNarodowySource(EventSource):

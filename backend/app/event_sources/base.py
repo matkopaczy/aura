@@ -44,11 +44,19 @@ SPORT_NAME_KEYWORDS = (
 )
 
 
+TARGI_NAME_KEYWORDS = ("targi", "expo", "jarmark")
+KONFERENCJE_NAME_KEYWORDS = ("kongres", "konferencj", "forum", "summit")
+
+
 def category_from_name(name: str, default: str = "koncert") -> tuple[str, float]:
-    """Kategoria wnioskowana z nazwy wydarzenia (sport po słowach kluczowych)."""
+    """Kategoria wnioskowana z nazwy wydarzenia (słowa kluczowe; kurator koryguje)."""
     lowered = name.lower()
     if any(keyword in lowered for keyword in SPORT_NAME_KEYWORDS):
         return map_category("sport")
+    if any(keyword in lowered for keyword in TARGI_NAME_KEYWORDS):
+        return map_category("targi")
+    if any(keyword in lowered for keyword in KONFERENCJE_NAME_KEYWORDS):
+        return map_category("konferencje")
     return map_category("", default=default)
 
 
@@ -62,6 +70,49 @@ class CandidateEvent:
     venue_lat: float | None
     venue_lng: float | None
     district: str | None = None
+
+
+def merge_consecutive_days(
+    days: list[tuple[datetime.date, str]],
+    venue: tuple[float, float],
+    district: str | None,
+) -> list[CandidateEvent]:
+    """Ten sam tytuł w kolejnych dniach -> jeden event z zakresem dat.
+
+    Dla kalendarzy pokazujących każde wystąpienie osobno (trasy dwudniowe,
+    targi wielodniowe rozbite na dni).
+    """
+    by_title: dict[str, list[datetime.date]] = {}
+    for date, title in days:
+        by_title.setdefault(title, []).append(date)
+
+    result: list[CandidateEvent] = []
+    for title, dates in by_title.items():
+        dates = sorted(set(dates))
+        start = end = dates[0]
+        ranges = []
+        for date in dates[1:]:
+            if (date - end).days == 1:
+                end = date
+            else:
+                ranges.append((start, end))
+                start = end = date
+        ranges.append((start, end))
+        category, impact = category_from_name(title)
+        for start, end in ranges:
+            result.append(
+                CandidateEvent(
+                    name=title,
+                    category=category,
+                    start_date=start,
+                    end_date=end,
+                    impact_strength=impact,
+                    venue_lat=venue[0],
+                    venue_lng=venue[1],
+                    district=district,
+                )
+            )
+    return result
 
 
 def _series_key(name: str) -> str:
