@@ -53,6 +53,7 @@ def ingest_events(db: Session, source: EventSource) -> int:
 
 def all_sources() -> list[EventSource]:
     """Rejestr aktywnych źródeł eventów (oficjalne kalendarze, §3 fosa)."""
+    from app.event_sources.atlasarena import AtlasArenaSource
     from app.event_sources.mtp import MtpPoznanSource
     from app.event_sources.tribe import tauron_arena_krakow
     from app.event_sources.trojmiasto import trojmiasto_koncerty, trojmiasto_sport
@@ -62,6 +63,7 @@ def all_sources() -> list[EventSource]:
         tauron_arena_krakow(),  # Kraków: koncerty + sport z areny (pełny kalendarz)
         trojmiasto_koncerty(),
         trojmiasto_sport(),  # Trójmiasto: koncerty + sport
+        AtlasArenaSource(),  # Łódź: koncerty + sport z Atlas Areny
     ]
 
 
