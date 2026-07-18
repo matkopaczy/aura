@@ -43,7 +43,6 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     if (!slug) return;
-    setError(null);
     Promise.all([getMarketMonitoring(slug, 30), getMarketEvents(slug)])
       .then(([monitoring, marketEvents]) => {
         setData(monitoring);
@@ -56,7 +55,14 @@ export default function MonitoringPage() {
     <main>
       <h1>{t("title")}</h1>
       <label htmlFor="market">{t("selectMarket")}</label>
-      <select id="market" value={slug} onChange={(e) => setSlug(e.target.value)}>
+      <select
+        id="market"
+        value={slug}
+        onChange={(e) => {
+          setError(null); // stary błąd nie dotyczy nowo wybranego rynku
+          setSlug(e.target.value);
+        }}
+      >
         {markets.map((m) => (
           <option key={m.slug} value={m.slug}>
             {m.name}

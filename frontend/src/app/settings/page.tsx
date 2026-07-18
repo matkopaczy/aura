@@ -6,6 +6,16 @@ import { ApiError, Me, Property, getMe, getProperties, updateProperty } from "@/
 import AccountSection from "@/components/AccountSection";
 import TeamSection from "@/components/TeamSection";
 
+function formFromProperty(p: Property) {
+  return {
+    name: p.name,
+    base_price: p.base_price ?? "",
+    min_price: p.min_price,
+    max_price: p.max_price ?? "",
+    ical_url: p.ical_url ?? "",
+  };
+}
+
 export default function SettingsPage() {
   const t = useTranslations("settings");
   const to = useTranslations("onboarding");
@@ -42,22 +52,19 @@ export default function SettingsPage() {
     getProperties()
       .then((list) => {
         setProperties(list);
-        if (list.length > 0) setPropertyId(list[0].id);
+        if (list.length > 0) {
+          setPropertyId(list[0].id);
+          setForm(formFromProperty(list[0]));
+        }
       })
       .catch((e) => handleError(e, "loadError"));
   }, [me, handleError]);
 
-  useEffect(() => {
-    const prop = properties.find((p) => p.id === propertyId);
-    if (!prop) return;
-    setForm({
-      name: prop.name,
-      base_price: prop.base_price ?? "",
-      min_price: prop.min_price,
-      max_price: prop.max_price ?? "",
-      ical_url: prop.ical_url ?? "",
-    });
-  }, [propertyId, properties]);
+  function selectProperty(id: string) {
+    setPropertyId(id);
+    const prop = properties.find((p) => p.id === id);
+    if (prop) setForm(formFromProperty(prop));
+  }
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -72,6 +79,7 @@ export default function SettingsPage() {
         ical_url: form.ical_url || null,
       });
       setProperties((list) => list.map((p) => (p.id === updated.id ? updated : p)));
+      setForm(formFromProperty(updated)); // wartości znormalizowane przez backend
       setMessage("saved");
     } catch (e) {
       handleError(e, "saveError");
@@ -91,7 +99,7 @@ export default function SettingsPage() {
     <main>
       <h1>{t("title")}</h1>
       {properties.length > 1 && (
-        <select value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+        <select value={propertyId} onChange={(e) => selectProperty(e.target.value)}>
           {properties.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}

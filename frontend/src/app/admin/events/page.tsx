@@ -43,8 +43,12 @@ export default function CurationPage() {
 
   const reload = useCallback(
     (marketSlug: string) => {
-      setSelected(new Set());
-      curationList(marketSlug).then(setEvents).catch(handleError);
+      curationList(marketSlug)
+        .then((list) => {
+          setEvents(list);
+          setSelected(new Set()); // zaznaczenie dotyczyło poprzedniej listy
+        })
+        .catch(handleError);
     },
     [handleError],
   );
@@ -60,7 +64,6 @@ export default function CurationPage() {
 
   useEffect(() => {
     if (!slug) return;
-    setError(null);
     reload(slug);
   }, [slug, reload]);
 
@@ -139,7 +142,13 @@ export default function CurationPage() {
       <h1>{t("title")}</h1>
 
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-        <select value={slug} onChange={(e) => setSlug(e.target.value)}>
+        <select
+          value={slug}
+          onChange={(e) => {
+            setError(null); // stary błąd nie dotyczy nowo wybranego rynku
+            setSlug(e.target.value);
+          }}
+        >
           {markets.map((m) => (
             <option key={m.slug} value={m.slug}>
               {m.name}
