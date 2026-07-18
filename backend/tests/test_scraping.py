@@ -6,11 +6,13 @@ from sqlalchemy import select
 from app.models import CompetitorListing, CoverageLevel, Market, PriceObservation
 from app.scraping.base import DayObservation, ObservedListing
 from app.scraping.booking import (
+    SMALL_MARKET_PAGES,
     listing_id_from_href,
     parse_distance_km,
     parse_price,
     parse_rating,
     parse_results_total,
+    scan_is_exhaustive,
 )
 from app.scraping.runner import _store_day
 
@@ -51,6 +53,15 @@ def test_parse_results_total():
         == 64
     )
     assert parse_results_total("Ładowanie wyników…") is None
+
+
+def test_scan_is_exhaustive():
+    """Próg 99% pokrycia nagłówka — wartości z pomiarów na żywo 2026-07-18."""
+    assert scan_is_exhaustive(579, 581)  # Zakopane: nagłówek wyższy o 2 od listy
+    assert scan_is_exhaustive(64, 64)  # Gorzów: dokładne pokrycie
+    assert not scan_is_exhaustive(100, 207)  # Karpacz przy starym suficie 4 partii
+    assert not scan_is_exhaustive(250, 581)  # utknięcie w połowie skanu
+    assert not scan_is_exhaustive(25, None)  # nagłówek nieodczytany = zachowawczo
 
 
 class _FakeAdapter:
@@ -196,6 +207,6 @@ def test_pages_for_market_deeper_on_small_markets():
 
     adapter = BookingAdapter.__new__(BookingAdapter)  # bez fetchowania robots
     adapter.pages_per_date = 2
-    assert adapter.pages_for_market(_mk(6.0)) == 4   # kurort
-    assert adapter.pages_for_market(_mk(8.0)) == 4   # granica włącznie
+    assert adapter.pages_for_market(_mk(6.0)) == SMALL_MARKET_PAGES   # kurort
+    assert adapter.pages_for_market(_mk(8.0)) == SMALL_MARKET_PAGES  # granica włącznie
     assert adapter.pages_for_market(_mk(12.0)) == 2  # duże miasto

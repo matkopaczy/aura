@@ -78,13 +78,28 @@ def parse_results_total(text: str) -> int | None:
     return int(re.sub(r"\D", "", match.group(1))) if match else None
 
 
+def scan_is_exhaustive(cards: int, total: int | None) -> bool:
+    """Czy załadowane karty pokrywają (niemal) wszystkie wyniki rynku.
+
+    Tylko wtedy wolno interpretować nieobecność listingu jako niedostępność.
+    Nagłówek nieodczytany (None) = zachowawczo nie-wyczerpujący.
+    """
+    return total is not None and cards >= total * EXHAUSTIVE_MIN_COVERAGE
+
+
 # Małe rynki (kurorty, mniejsze miasta — promień z markets.radius_km) skanujemy
 # głębiej, żeby osiągnąć skan WYCZERPUJĄCY (liczba kart >= liczby wyników
 # z nagłówka strony): tylko wtedy wolno liczyć obłożenie (nieobecny=zajęty
 # wymaga pełnej listy). Duże miasta mają setki ofert — tam głębiej nie znaczy
 # wyczerpująco, więc zostaje płycej (§6.4: nie zwiększamy obciążenia bez zysku).
 SMALL_MARKET_RADIUS_KM = 8.0
-SMALL_MARKET_PAGES = 4  # limit partii po RESULTS_PER_BATCH wyników
+# Limit partii po RESULTS_PER_BATCH wyników. To sufit bezpieczeństwa, nie cel:
+# scroll kończy się naturalnie z końcem wyników, więc głębiej ładujemy tylko
+# tam, gdzie podaż realnie istnieje. Rekonesans 2026-07-18 (szczyt sezonu):
+# Zakopane 581, Sopot 421, Kołobrzeg 305, Władysławowo 224, Karpacz 206 —
+# 30 partii (750) pokrywa maksimum z zapasem sezonowym, a tnie patologie
+# (np. wyszukiwanie rozlane na "okolice").
+SMALL_MARKET_PAGES = 30
 
 RESULTS_PER_BATCH = 25  # tyle kart serwuje Booking na start i na jedną partię scrolla
 HYDRATION_WAIT_S = 5.0  # obserwator doładowywania podpina się dopiero po hydracji JS
@@ -94,6 +109,12 @@ GROWTH_TIMEOUT_S = 8.0  # brak nowych kart w tym czasie po scrollu = koniec wyni
 # "Karpacz: znaleziono 207 obiektów" i "Znaleziono 64 obiekty w miejscu Gorzów
 # Wielkopolski i okolicach" (stąd IGNORECASE).
 _TOTAL_RE = re.compile(r"znaleziono\s+([\d\s]+)\s+obiekt", re.IGNORECASE)
+
+# Nagłówek bywa o 1-2 wyniki wyższy niż realnie renderowane karty (pomiar
+# 2026-07-18: Zakopane 579 kart przy nagłówku 581, ostatnia partia niepełna =
+# koniec wyników). Pokrycie >= 99% nagłówka uznajemy za skan wyczerpujący;
+# utknięcie w połowie (np. 250/581 = 43%) nadal wypada poniżej progu.
+EXHAUSTIVE_MIN_COVERAGE = 0.99
 
 
 class BookingAdapter(SourceAdapter):
@@ -211,7 +232,7 @@ class BookingAdapter(SourceAdapter):
 
                     raw_cards = page.evaluate(_EXTRACT_JS)
                     total = self._results_total(page)
-                    exhaustive = total is not None and len(raw_cards) >= total
+                    exhaustive = scan_is_exhaustive(len(raw_cards), total)
                     parsed = (self._to_listing(c, market.currency_code) for c in raw_cards)
                     seen: dict[str, ObservedListing] = {
                         listing.source_listing_id: listing
