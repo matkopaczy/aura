@@ -140,7 +140,24 @@ Docker Compose: Postgres + backend + scheduler + front; backupy bazy
 codzienne, szyfrowane (§9). Bez Kubernetesa, bez managed-czegokolwiek (§11).
 Migracja: seed + `pg_dump` z dev; pół dnia pracy z weryfikacją.
 
-**DECYZJA założyciela (dostawca + termin):** ………
+**Niuans scrapingowy (2026-07-19, z analizy ryzyk)**: adresy IP centrów
+danych są przez portale flagowane częściej niż łącza domowe — przeniesienie
+scrapera na VPS może zwiększyć ryzyko blokady IP (rotacja proxy wykluczona,
+§6.4). Dwa warianty do wyboru:
+
+- **5a. Wszystko na VPS** — najprościej (jedna maszyna, §11); ryzyko blokady
+  akceptujemy i monitorujemy (alert jakości danych); w razie blokady scraper
+  wraca na łącze rezydencjalne (wariant 5b) w jeden wieczór.
+- **5b. Hybryda** — VPS: baza + API + front + eventy; scraper cen zostaje na
+  maszynie z łączem domowym i pisze do bazy na VPS. Mniejsze ryzyko blokady,
+  ale scraping dalej zależy od włączonego laptopa (słabość tylko częściowo
+  zdjęta) i dochodzi tunel/VPN do bazy.
+
+Rekomendacja: zacząć od **5a** (prostota, pełna niezawodność nocy) z jasnym
+planem odwrotu do 5b przy pierwszych oznakach blokady — przejście jest tanie
+w obie strony, a alert jakości danych wykryje problem pierwszej nocy.
+
+**DECYZJA założyciela (dostawca + termin + wariant 5a/5b):** ………
 
 ---
 
