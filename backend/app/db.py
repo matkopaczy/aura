@@ -12,7 +12,18 @@ _session_factory = None
 def get_engine():
     global _engine, _session_factory
     if _engine is None:
-        _engine = create_engine(get_settings().database_url)
+        # Fail fast przy martwej bazie (§11): padnięty kontener za proxy portów
+        # Dockera przyjmuje TCP, ale handshake Postgresa nigdy nie przychodzi —
+        # bez limitu pierwsze zapytanie wisiało w nieskończoność bez błędu
+        # (incydent 2026-07-18: scheduler w ciszy na SELECT z markets).
+        # Realny czas do błędu: ~10 s (psycopg próbuje localhost po IPv6 i IPv4,
+        # 5 s na adres). pool_pre_ping odzyskuje pulę po restarcie bazy bez
+        # restartu procesu.
+        _engine = create_engine(
+            get_settings().database_url,
+            pool_pre_ping=True,
+            connect_args={"connect_timeout": 5},
+        )
         _session_factory = sessionmaker(bind=_engine, expire_on_commit=False)
     return _engine
 
