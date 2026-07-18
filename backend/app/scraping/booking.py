@@ -1,8 +1,11 @@
 """Adapter Booking.com — scraping publicznych wyników wyszukiwania (§6.4).
 
-Strategia: dla każdej daty pobytu jedno wyszukiwanie 1-nocne per strona wyników.
-Karta obiektu daje naraz: identyfikator (slug z linku), cenę, rating, typ
-jednostki i odległość od centrum — czyli listing i obserwację ceny w jednym.
+Strategia: dla każdej daty pobytu JEDNO załadowanie strony wyników 1-nocnych;
+kolejne partie po 25 wyników doładowuje infinite scroll (parametr offset w URL
+jest przez Booking ignorowany — zweryfikowane na żywo 2026-07-18: 4 różne
+offsety zwróciły identyczne karty). Karta obiektu daje naraz: identyfikator
+(slug z linku), cenę, rating, typ jednostki i odległość od centrum — czyli
+listing i obserwację ceny w jednym.
 Selektory zweryfikowane na żywo 2026-07-16 (data-testid="property-card" itd.).
 """
 
@@ -13,6 +16,7 @@ import urllib.parse
 from collections.abc import Iterator
 from decimal import Decimal
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 from app.models import Market
@@ -68,13 +72,28 @@ def listing_id_from_href(href: str) -> str | None:
     return f"{match.group(1)}/{match.group(2)}" if match else None
 
 
+def parse_results_total(text: str) -> int | None:
+    """'Karpacz: znaleziono 207 obiektów' → 207 (łączna liczba wyników)."""
+    match = _TOTAL_RE.search(text)
+    return int(re.sub(r"\D", "", match.group(1))) if match else None
+
+
 # Małe rynki (kurorty, mniejsze miasta — promień z markets.radius_km) skanujemy
-# głębiej, żeby osiągnąć skan WYCZERPUJĄCY (ostatnia strona <25 wyników):
-# tylko wtedy wolno liczyć obłożenie (nieobecny=zajęty wymaga pełnej listy).
-# Duże miasta mają setki ofert — tam głębiej nie znaczy wyczerpująco,
-# więc zostaje płycej (§6.4: nie zwiększamy obciążenia bez zysku).
+# głębiej, żeby osiągnąć skan WYCZERPUJĄCY (liczba kart >= liczby wyników
+# z nagłówka strony): tylko wtedy wolno liczyć obłożenie (nieobecny=zajęty
+# wymaga pełnej listy). Duże miasta mają setki ofert — tam głębiej nie znaczy
+# wyczerpująco, więc zostaje płycej (§6.4: nie zwiększamy obciążenia bez zysku).
 SMALL_MARKET_RADIUS_KM = 8.0
-SMALL_MARKET_PAGES = 4
+SMALL_MARKET_PAGES = 4  # limit partii po RESULTS_PER_BATCH wyników
+
+RESULTS_PER_BATCH = 25  # tyle kart serwuje Booking na start i na jedną partię scrolla
+HYDRATION_WAIT_S = 5.0  # obserwator doładowywania podpina się dopiero po hydracji JS
+GROWTH_TIMEOUT_S = 8.0  # brak nowych kart w tym czasie po scrollu = koniec wyników
+
+# Nagłówek wyników — łączna liczba wyników. Dwa warianty zaobserwowane na żywo:
+# "Karpacz: znaleziono 207 obiektów" i "Znaleziono 64 obiekty w miejscu Gorzów
+# Wielkopolski i okolicach" (stąd IGNORECASE).
+_TOTAL_RE = re.compile(r"znaleziono\s+([\d\s]+)\s+obiekt", re.IGNORECASE)
 
 
 class BookingAdapter(SourceAdapter):
@@ -90,7 +109,7 @@ class BookingAdapter(SourceAdapter):
             return max(self.pages_per_date, SMALL_MARKET_PAGES)
         return self.pages_per_date
 
-    def _search_url(self, market: Market, stay_date: datetime.date, offset: int) -> str:
+    def _search_url(self, market: Market, stay_date: datetime.date) -> str:
         params = urllib.parse.urlencode(
             {
                 "ss": market.name,
@@ -99,10 +118,50 @@ class BookingAdapter(SourceAdapter):
                 "group_adults": 2,
                 "no_rooms": 1,
                 "group_children": 0,
-                "offset": offset,
             }
         )
         return f"{BASE_URL}{SEARCH_PATH}?{params}"
+
+    @staticmethod
+    def _card_count(page) -> int:
+        return page.evaluate(
+            "() => document.querySelectorAll('[data-testid=\"property-card\"]').length"
+        )
+
+    @staticmethod
+    def _results_total(page) -> int | None:
+        """Łączna liczba wyników z nagłówka strony; None = nagłówek nieodczytany
+        (wtedy zachowawczo NIE uznajemy skanu za wyczerpujący)."""
+        try:
+            header = page.locator("h1").first.inner_text(timeout=5_000)
+        except PlaywrightTimeoutError:
+            return None
+        return parse_results_total(header)
+
+    def _wait_for_card_growth(self, page, previous: int) -> int:
+        """Czeka, aż infinite scroll doładuje karty; zwraca nową liczbę kart
+        (== previous, gdy nic nie przyszło w GROWTH_TIMEOUT_S)."""
+        deadline = time.monotonic() + GROWTH_TIMEOUT_S
+        while time.monotonic() < deadline:
+            count = self._card_count(page)
+            if count > previous:
+                return count
+            page.wait_for_timeout(500)
+        return previous
+
+    @staticmethod
+    def _dismiss_overlays(page) -> None:
+        """Dwa overlaye potrafią przechwycić kliknięcia na dole strony wyników:
+        modal promujący logowanie (aria-modal — zamyka go Escape) oraz baner
+        cookies OneTrust (odrzucamy zbędne — wariant najbardziej prywatny).
+        Brak overlayu = nic do zrobienia."""
+        if page.evaluate("() => !!document.querySelector('[data-bui-trap-root]')"):
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(500)
+        reject = page.locator("#onetrust-reject-all-handler")
+        if reject.count() and reject.first.is_visible():
+            reject.first.click(timeout=5_000)
+            page.wait_for_timeout(500)
 
     def observe_market(
         self, market: Market, stay_dates: list[datetime.date]
@@ -116,28 +175,48 @@ class BookingAdapter(SourceAdapter):
                 lambda route: route.abort(),
             )
             page = context.new_page()
-            pages_limit = self.pages_for_market(market)
+            cards_limit = self.pages_for_market(market) * RESULTS_PER_BATCH
             try:
                 for stay_date in stay_dates:
-                    listings: list[ObservedListing] = []
-                    exhaustive = False
-                    for page_no in range(pages_limit):
-                        url = self._search_url(market, stay_date, offset=page_no * 25)
-                        if not self._robots.can_fetch(USER_AGENT, url):
-                            raise PermissionError(f"robots.txt zabrania pobrania: {url}")
-                        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
-                        page.wait_for_selector(
-                            '[data-testid="property-card"]', timeout=30_000
+                    url = self._search_url(market, stay_date)
+                    if not self._robots.can_fetch(USER_AGENT, url):
+                        raise PermissionError(f"robots.txt zabrania pobrania: {url}")
+                    page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+                    page.wait_for_selector('[data-testid="property-card"]', timeout=30_000)
+                    page.wait_for_timeout(int(HYDRATION_WAIT_S * 1000))
+                    self._dismiss_overlays(page)
+
+                    # Kolejne partie doładowuje scroll (po 3 partiach Booking
+                    # przechodzi na przycisk "Załaduj więcej wyników"); koniec,
+                    # gdy nic nie przyszło albo osiągnęliśmy limit partii
+                    # (§6.4 — budżet obciążenia).
+                    count = self._card_count(page)
+                    while count < cards_limit:
+                        page.evaluate(
+                            "() => window.scrollTo(0, document.documentElement.scrollHeight)"
                         )
-                        raw_cards = page.evaluate(_EXTRACT_JS)
-                        parsed = (self._to_listing(c, market.currency_code) for c in raw_cards)
-                        listings.extend(item for item in parsed if item is not None)
+                        grown = self._wait_for_card_growth(page, count)
+                        if grown == count:
+                            load_more = page.get_by_role(
+                                "button", name="Załaduj więcej wyników"
+                            )
+                            if not load_more.count():
+                                break
+                            load_more.first.click(timeout=10_000)
+                            grown = self._wait_for_card_growth(page, count)
+                            if grown == count:
+                                break
+                        count = grown
                         time.sleep(self.request_interval_s)
-                        if len(raw_cards) < 25:  # niepełna strona = koniec wyników
-                            exhaustive = True
-                            break
+
+                    raw_cards = page.evaluate(_EXTRACT_JS)
+                    total = self._results_total(page)
+                    exhaustive = total is not None and len(raw_cards) >= total
+                    parsed = (self._to_listing(c, market.currency_code) for c in raw_cards)
                     seen: dict[str, ObservedListing] = {
-                        listing.source_listing_id: listing for listing in listings
+                        listing.source_listing_id: listing
+                        for listing in parsed
+                        if listing is not None
                     }
                     yield DayObservation(
                         stay_date=stay_date,
@@ -145,6 +224,7 @@ class BookingAdapter(SourceAdapter):
                         listings=list(seen.values()),
                         exhaustive=exhaustive,
                     )
+                    time.sleep(self.request_interval_s)
             finally:
                 context.close()
                 browser.close()

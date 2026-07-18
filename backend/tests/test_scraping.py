@@ -10,6 +10,7 @@ from app.scraping.booking import (
     parse_distance_km,
     parse_price,
     parse_rating,
+    parse_results_total,
 )
 from app.scraping.runner import _store_day
 
@@ -36,6 +37,20 @@ def test_parse_distance_km():
 def test_listing_id_from_href():
     assert listing_id_from_href("https://www.booking.com/hotel/pl/altus.pl.html") == "pl/altus"
     assert listing_id_from_href("https://www.booking.com/inne/strony.html") is None
+
+
+def test_parse_results_total():
+    """Nagłówek wyników → łączna liczba obiektów; to podstawa flagi exhaustive
+    (offset w URL jest ignorowany przez Booking, więc 'ostatnia strona <25'
+    przestało być sygnałem końca wyników)."""
+    assert parse_results_total("Karpacz: znaleziono 207 obiektów") == 207
+    assert parse_results_total("Mielno: znaleziono 1 obiekt") == 1
+    assert parse_results_total("Gdańsk: znaleziono 1\xa0234 obiekty") == 1234
+    assert (
+        parse_results_total("Znaleziono 64 obiekty w miejscu Gorzów Wielkopolski i okolicach")
+        == 64
+    )
+    assert parse_results_total("Ładowanie wyników…") is None
 
 
 class _FakeAdapter:
