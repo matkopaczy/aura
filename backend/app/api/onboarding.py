@@ -39,7 +39,7 @@ def parse_listing(body: ParseRequest, user: CurrentUser, db: DbSession) -> Parse
         listing = fetch_booking_listing(str(body.url))
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="unsupported_url"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="unsupported_url"
         ) from exc
     except ListingUnavailableError as exc:
         raise HTTPException(

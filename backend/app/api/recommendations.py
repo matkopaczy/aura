@@ -88,11 +88,11 @@ def generate_for_property(db: Session, prop: Property, days: int = 60) -> list[R
     market = db.get(Market, prop.market_id)
     if market.coverage_level != CoverageLevel.RECOMMENDATIONS:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="market_monitoring_only"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="market_monitoring_only"
         )
     if prop.base_price is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="base_price_required"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="base_price_required"
         )
 
     events = db.scalars(

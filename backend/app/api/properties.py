@@ -64,7 +64,7 @@ def create_property(body: PropertyCreate, user: OwnerUser, db: DbSession) -> Pro
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="market_not_found")
     if body.max_price is not None and body.max_price < body.min_price:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="max_below_min"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="max_below_min"
         )
     prop = Property(
         account_id=user.account_id,
@@ -111,7 +111,7 @@ def update_property(
         setattr(prop, field, value)
     if prop.max_price is not None and prop.max_price < prop.min_price:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="max_below_min"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="max_below_min"
         )
     db.commit()
     market = db.get(Market, prop.market_id)

@@ -125,7 +125,7 @@ def curation_create(body: EventCreate, curator: Curator, db: DbSession) -> Event
     market = _get_market(db, body.market_slug)
     if body.end_date < body.start_date:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="end_before_start"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="end_before_start"
         )
     event = Event(
         market_id=market.id,
@@ -156,7 +156,7 @@ def curation_update(
         setattr(event, field, value)
     if event.end_date < event.start_date:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="end_before_start"
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="end_before_start"
         )
     db.commit()
     market = db.get(Market, event.market_id)
