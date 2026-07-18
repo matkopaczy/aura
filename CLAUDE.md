@@ -154,6 +154,11 @@ przykład: ferie dodane tylko do rynków, gdzie kierunek wpływu jest pewny.
 
 ## Środowisko dev (Windows!) — rzeczy, które gryzą
 
+- **Całe środowisko jedną komendą**: `scripts/start-dev.ps1` (idempotentny —
+  czeka na Dockera, podnosi bazę, dostawia scheduler i uvicorn tylko gdy nie
+  działają; logi w `%LOCALAPPDATA%\aura\`). Wart wpięcia w autostart
+  (Harmonogram zadań / shell:startup) — scheduler musi żyć, żeby nocny
+  scraping się odbył; padnięty scheduler = noc bez danych.
 - **TLS interception** (antywirus podmienia certy): naprawione globalnie przez
   `truststore.inject_into_ssl()` w `app/__init__.py`. NIE wyłączaj weryfikacji
   SSL. Jeśli `pip`/`git` płacze o certy — to ta sama przyczyna.
@@ -193,7 +198,7 @@ Frontend przy KAŻDEJ zmianie w `frontend/` (oba kroki są też w CI):
 
 ```bash
 cd frontend
-npm run lint        # eslint; reguła set-state-in-effect = warn (3 stare miejsca)
+npm run lint        # eslint; ma być 0 błędów i 0 warningów
 npm run typecheck   # tsc --noEmit
 ```
 
