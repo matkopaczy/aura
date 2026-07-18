@@ -7,6 +7,7 @@ synchronizacja iCal codziennie o 01:00 UTC (lekkie zapytania, po jednym per obie
 
 import logging
 
+from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
@@ -82,7 +83,12 @@ def run_event_ingest() -> None:
 def build_scheduler() -> BlockingScheduler:
     from sqlalchemy.orm import Session
 
-    scheduler = BlockingScheduler(timezone="UTC")
+    # Maks. 2 równoległe joby: wszystkie 31 rynków strzela o 03:00 czasu
+    # lokalnego — domyślne 10 wątków = 10 przeglądarek na Booking naraz
+    # (§6.4: nie zwiększamy obciążenia; sekwencyjność z lekkim buforem).
+    scheduler = BlockingScheduler(
+        timezone="UTC", executors={"default": ThreadPoolExecutor(2)}
+    )
     with Session(get_engine()) as db:
         markets = db.scalars(select(Market)).all()
     for market in markets:
