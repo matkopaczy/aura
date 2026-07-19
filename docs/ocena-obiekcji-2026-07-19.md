@@ -87,12 +87,14 @@ NIE budować nowych szerokości przed pilotem.
 nie strukturalna. Strukturalna = dane wynikowe (rekomendacja → cena →
 rezerwacja) + integracje PL. Wniosek spójny z 3c i 4a.
 
-## Pola decyzji
+## Pola decyzji (rozstrzygnięte 2026-07-19)
 
-- [ ] 2a: przemianowanie „obłożenie" → „presja dostępności rynku" (UI+raporty)
-- [ ] 3a: etykieta „szacowany" + zdanie o założeniu przy liczniku
-- [ ] 3c: import CSV rezerwacji — przed komercjalizacją / po pilocie / nie
-- [ ] 8: nowa kopia landing „sell1"
-- [ ] 4a: rekonesans API polskich channel managerów teraz (bez budowy)
-- [ ] 7: siatka cen z wariantem 89–129 zł przy write-backu
-- [ ] 1: dopisanie Demand API do briefu prawnego
+- [x] 2a: przemianowanie „obłożenie" → „presja dostępności rynku" — WDROŻONE
+      (etykiety metryk = „presja dostępności"; wyjaśnienia rekomendacji
+      i maile = prosty język: „wolnych ofert w okolicy ubywa")
+- [x] 3a: etykieta „szacowany" + zdanie o założeniu — WDROŻONE (dashboard + mail)
+- [x] 3c: import CSV rezerwacji — TAK, przed komercjalizacją (backlog)
+- [x] 8: nowa kopia landing „sell1" — WDROŻONE
+- [x] 4a: rekonesans API polskich channel managerów — TAK (wyniki niżej)
+- [x] 7: wariant 89–129 przy write-backu — NIE (obowiązuje siatka 29/59/119)
+- [x] 1: Demand API w briefie prawnym — TAK (dopisane do decyzje-przedstartowe §4)

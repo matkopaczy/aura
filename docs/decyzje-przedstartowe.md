@@ -102,13 +102,17 @@ darmowym pakiecie przejmuje pierwszy miesiąc 0 zł bez karty (w każdym
 pakiecie, mechanizm triala już w produkcie) + publiczne raporty SEO.
 Kotwica: jedna odzyskana noc (250–500 zł) płaci za 4–8 miesięcy.
 
+Opisy sprzedażowe (język korzyści, dla przeciętnego gospodarza) — wersja
+zatwierdzona 2026-07-19:
+
 | | **MONITOR** | **REKOMENDACJE** ⭐ | **PRO** |
 |---|---|---|---|
+| Obietnica | Wiedz, co robi konkurencja | Powiemy Ci, ile ustawić i dlaczego | Dla kilku obiektów i zespołu z recepcją |
 | Cena | **29 zł**/obiekt/mies. (290 zł/rok) | **59 zł**/obiekt/mies. (590 zł/rok) | **119 zł**/obiekt/mies. (1190 zł/rok) |
 | Dla kogo | zaczynający; rynki w poziomie monitoring | samodzielny gospodarz 1–5 obiektów | gospodarze 3–10 obiektów, obiekty z recepcją |
-| Zawartość | pozycja Twojej ceny vs mediana (codziennie), presja dostępności, kalendarz eventów z siłą wpływu, raport tygodniowy, alerty o skokach cen | wszystko z MONITORA + rekomendacja ceny na każdą noc (60 dni) z wyjaśnieniem po polsku, akceptacja 1 kliknięciem z maila, licznik wyniku, iCal | wszystko z REKOMENDACJI + konta zespołowe (właściciel/recepcja), wsparcie <24 h rob., kwartalny przegląd cen 1:1, lokalny event na życzenie w 48 h, auto-zapis cen w cenie gdy zadebiutuje |
-| Start | 1. miesiąc 0 zł, bez karty | 1. miesiąc 0 zł, bez karty | 1. miesiąc 0 zł, bez karty |
-| Rabat | od 5. obiektu −30% | od 5. obiektu −30% | od 5. obiektu −30% |
+| Zawartość | codziennie widzisz, czy Twoja cena jest niższa/wyższa niż w okolicy; ile obiektów obok jest już zajętych na dany dzień; kalendarz lokalnych wydarzeń podbijających popyt; raport e-mail raz w tygodniu; sygnał, gdy konkurencja nagle zmienia ceny | wszystko z Monitora + gotowa cena na każdą noc na 2 miesiące w przód; po polsku tłumaczymy dlaczego właśnie tyle; zatwierdzasz jednym kliknięciem z e-maila; podliczamy, ile dodatkowo zarobiłeś dzięki podpowiedziom; łączysz kalendarz z Booking i Airbnb | wszystko z Rekomendacji + osobne konta dla właściciela i recepcji; szybsza pomoc (1 dzień roboczy); co kwartał rozmowa 1:1 o strategii cen; dodamy Twoje lokalne wydarzenie w 2 dni; automatyczne ustawianie cen w cenie, gdy udostępnimy |
+| Start | 1. miesiąc gratis, bez karty | 1. miesiąc gratis, bez karty | 1. miesiąc gratis, bez karty |
+| Rabat | 5 obiektów+ → każdy −30% | 5 obiektów+ → każdy −30% | 5 obiektów+ → każdy −30% |
 
 Uzasadnienia liczb: 59 = pod PriceLabs, nad nieopłacalnym 49 (krytyka
 recenzenta), roczne 590 daje psychologiczne „~49/mies."; 119 = koszyk
@@ -146,8 +150,12 @@ gospodarzach może biec równolegle — tak stanowi spec):
 3. **RODO** — mamy: politykę prywatności, rejestr przetwarzania, umowę
    powierzenia (commit 682d010); do przeglądu prawnika + DPIA-light dla
    scrapingu (dane obiektów, nie osób — do potwierdzenia).
-4. **Publiczne raporty rynkowe (§5.2)** — publikacja median/obłożenia
-   per miasto: czy agregaty z danych konkurencji są bezpieczne publicznie.
+4. **Publiczne raporty rynkowe (§5.2)** — publikacja median/presji
+   dostępności per miasto: czy agregaty z danych konkurencji są bezpieczne
+   publicznie.
+5. **Oficjalna ścieżka Booking** — ocena opłacalności i warunków Demand API
+   (status Managed Affiliate Partner, umowa): czy istnieje legalna droga
+   do danych, która zdejmuje ryzyko scrapingu (z recenzji 2026-07-19).
 
 Szacunek rynkowy: 3–6 tys. zł za pakiet (kancelaria butikowa e-commerce/IT).
 
