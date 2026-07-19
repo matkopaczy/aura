@@ -13,6 +13,7 @@ from app.db import get_db
 from app.models import CoverageLevel, Market, Property, PropertyType
 from app.monitoring import (
     SEGMENT_MIN_SAMPLE,
+    latest_floor,
     market_series,
     occupancy_by_ring,
     price_position,
@@ -46,12 +47,19 @@ class MonitoringDayResponse(BaseModel):
     # jak Twój"); tylko w widoku obiektu i tylko gdy próbka >= SEGMENT_MIN_SAMPLE.
     segment_median: Decimal | None = None
     segment_sample: int | None = None
+    # Tempo rynku (A4) — zmiana presji dostępności między przebiegami
+    # (+0.15 = o 15 pkt proc. więcej rynku zajęte niż poprzednio). None gdy < 2 przebiegi.
+    booking_pace: float | None = None
 
 
 class MonitoringResponse(BaseModel):
     market_slug: str
     currency_code: str
     days: list[MonitoringDayResponse]
+    # Spread floor–mediana (A7) — najtańszy dostępny w okolicy vs mediana rynku.
+    # None gdy brak sygnału floor (nocowanie.pl).
+    floor_min: Decimal | None = None
+    floor_median: Decimal | None = None
 
 
 @router.get("/markets", response_model=list[MarketResponse])
@@ -82,9 +90,12 @@ def _series_response(
         if segment_type is not None
         else {}
     )
+    floor = latest_floor(db, market)  # A7: spread floor–mediana
     return MonitoringResponse(
         market_slug=market.slug,
         currency_code=market.currency_code,
+        floor_min=floor.min_price if floor is not None else None,
+        floor_median=floor.median_price if floor is not None else None,
         days=[
             MonitoringDayResponse(
                 stay_date=day.stay_date,
@@ -102,6 +113,7 @@ def _series_response(
                 price_p90=day.price_p90,
                 segment_median=_segment_value(segments.get(day.stay_date)),
                 segment_sample=_segment_count(segments.get(day.stay_date)),
+                booking_pace=day.booking_pace,
             )
             for day in series
         ],

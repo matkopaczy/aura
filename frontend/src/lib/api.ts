@@ -103,12 +103,17 @@ export interface MonitoringDay {
   // Comp set segmentowy (A2) — mediana "obiektów jak Twój"; tylko w widoku obiektu.
   segment_median: string | null;
   segment_sample: number | null;
+  // Tempo rynku (A4) — zmiana presji dostępności między przebiegami; null gdy < 2 przebiegi.
+  booking_pace: number | null;
 }
 
 export interface MonitoringResponse {
   market_slug: string;
   currency_code: string;
   days: MonitoringDay[];
+  // Spread floor–mediana (A7) — najtańszy dostępny w okolicy vs mediana rynku.
+  floor_min: string | null;
+  floor_median: string | null;
 }
 
 export interface EventItem {

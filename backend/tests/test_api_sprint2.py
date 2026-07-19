@@ -179,3 +179,35 @@ def test_property_monitoring_comp_set_none_below_min_sample(client, db_session):
     day = resp.json()["days"][0]
     assert day["segment_median"] is None  # za mała próbka segmentu
     assert day["segment_sample"] is None
+
+
+def test_monitoring_response_floor_spread(client, db_session):
+    """A7: najtańszy dostępny (floor) + mediana floor w odpowiedzi rynkowej."""
+    from app.models import FloorSignal
+
+    market = _seed_market(db_session)
+    headers = _register(client)
+    db_session.add(
+        FloorSignal(
+            market_id=market.id,
+            source="nocowanie",
+            min_price=Decimal("150"),
+            median_price=Decimal("240"),
+            sample_size=12,
+            currency_code="PLN",
+            observed_at=datetime.datetime(2026, 7, 16, tzinfo=datetime.UTC),
+        )
+    )
+    db_session.commit()
+
+    body = client.get(f"/api/monitoring/market/{market.slug}?days=1", headers=headers).json()
+    assert Decimal(body["floor_min"]) == Decimal("150")
+    assert Decimal(body["floor_median"]) == Decimal("240")
+
+
+def test_monitoring_response_floor_none_without_signal(client, db_session):
+    market = _seed_market(db_session)
+    headers = _register(client)
+    body = client.get(f"/api/monitoring/market/{market.slug}?days=1", headers=headers).json()
+    assert body["floor_min"] is None
+    assert body["floor_median"] is None

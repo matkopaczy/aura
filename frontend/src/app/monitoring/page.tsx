@@ -17,6 +17,16 @@ function formatOccupancy(value: number | null, noData: string): string {
   return value === null ? noData : `${Math.round(value * 100)}%`;
 }
 
+// Tempo rynku (A4): pace to zmiana presji w pkt proc. Znak + strzałka czytelne
+// dla przeciętnej osoby; próg 3 pp odsiewa szum.
+function formatPace(value: number | null): string {
+  if (value === null) return "—";
+  const pp = Math.round(value * 100);
+  if (pp >= 3) return `↑ +${pp} pp`;
+  if (pp <= -3) return `↓ ${pp} pp`;
+  return "→ bez zmian";
+}
+
 export default function MonitoringPage() {
   const t = useTranslations("monitoring");
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -77,6 +87,21 @@ export default function MonitoringPage() {
         <DemandCalendar days={data.days} events={events} currencyCode={data.currency_code} />
       )}
 
+      {data !== null && data.floor_min !== null && data.floor_median !== null && (
+        <p className="hint">
+          {t("spreadLine", {
+            min: Number(data.floor_min).toFixed(0),
+            median: Number(data.floor_median).toFixed(0),
+            currency: data.currency_code,
+            spread: Math.round(
+              ((Number(data.floor_median) - Number(data.floor_min)) /
+                Number(data.floor_min)) *
+                100,
+            ),
+          })}
+        </p>
+      )}
+
       {data !== null && (
         <table>
           <thead>
@@ -84,6 +109,7 @@ export default function MonitoringPage() {
               <th>{t("date")}</th>
               <th>{t("median")}</th>
               <th>{t("priceBand")}</th>
+              <th>{t("pace")}</th>
               <th>{t("sample")}</th>
               <th>{t("occupancy")}</th>
             </tr>
@@ -102,6 +128,7 @@ export default function MonitoringPage() {
                     ? `${Number(day.price_p25).toFixed(0)}–${Number(day.price_p75).toFixed(0)} ${data.currency_code}`
                     : "—"}
                 </td>
+                <td>{formatPace(day.booking_pace)}</td>
                 <td>{day.sample_size}</td>
                 <td>{formatOccupancy(day.occupancy, t("noData"))}</td>
               </tr>
