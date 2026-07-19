@@ -89,44 +89,42 @@ być blokująca dla oferty.
 
 Punkt startowy ze specu: **49 zł/obiekt/mies.**, Monitoring taniej lub darmowy.
 
-### DECYZJA założyciela (2026-07-19): trzy pakiety o zróżnicowanej cenie.
-Poniżej propozycja siatki (Claude jako dyrektor sprzedaży) — **do akceptacji**.
+### DECYZJA założyciela (2026-07-19): trzy pakiety o zróżnicowanej cenie;
+**bez pakietu darmowego** — za darmo wyłącznie pierwszy miesiąc.
 
-### Propozycja: siatka trzypakietowa
+### Propozycja: siatka trzypakietowa (wersja 2, wszystkie płatne)
 
-Logika: darmowy pakiet robi lejek (koszt ~0 — wszystko już istnieje),
-środkowy jest produktem dla 90% klientów i kotwiczy się poniżej PriceLabs
-(~80 zł + ~40 zł dashboard), górny monetyzuje segment 2–10 obiektów
-i recepcje usługą + pierwszeństwem, nie obietnicami. Kotwica narracyjna:
-jedna odzyskana noc (250–500 zł) płaci za miesiąc.
+Logika: drabinka 29/59/119. Monitor = tani bilet wstępu i monetyzacja rynków
+oczekujących; Rekomendacje = produkt dla 90% klientów, zakotwiczony pod
+PriceLabs (~80 zł + ~40 zł dashboard, po angielsku); Pro = segment 3–10
+obiektów i recepcje, płaci za usługę i czas, nie za algorytm. Rolę lejca po
+darmowym pakiecie przejmuje pierwszy miesiąc 0 zł bez karty (w każdym
+pakiecie, mechanizm triala już w produkcie) + publiczne raporty SEO.
+Kotwica: jedna odzyskana noc (250–500 zł) płaci za 4–8 miesięcy.
 
-| | **START** | **REKOMENDACJE** ⭐ | **PRO** |
+| | **MONITOR** | **REKOMENDACJE** ⭐ | **PRO** |
 |---|---|---|---|
-| Cena | 0 zł | **59 zł**/obiekt/mies. albo 590 zł/rok (2 mies. gratis) | **119 zł**/obiekt/mies. albo 1190 zł/rok |
-| Dla kogo | zaczynający; rynki w monitoringu | samodzielny gospodarz 1–5 obiektów | gospodarze 3–10 obiektów, obiekty z recepcją |
-| Zawartość | pozycja Twojej ceny vs mediana rynku, presja dostępności, event tygodnia, cotygodniowy e-mail (1 obiekt, 1 rynek) | wszystko ze START + rekomendacje na 60 dni z wyjaśnieniami po polsku, akceptacja jednym kliknięciem z maila, pilne alerty (skoki cen, nagłe eventy), licznik wyniku, kalendarz iCal, wsparcie e-mail | wszystko z REKOMENDACJI + konta zespołowe z rolami (właściciel/recepcja), priorytetowe wsparcie (<24 h rob.), kwartalny przegląd strategii cenowej 1:1 (30 min), dodanie lokalnego wydarzenia do kalendarza na życzenie w 48 h, wcześniejszy dostęp do nowych funkcji — w tym automatyczny zapis cen w cenie pakietu, gdy zadebiutuje |
-| Start | — | 1. miesiąc 0 zł, bez karty (jest w produkcie) | 1. miesiąc 0 zł, bez karty |
-| Rabat | — | od 5. obiektu −30% | od 5. obiektu −30% |
+| Cena | **29 zł**/obiekt/mies. (290 zł/rok) | **59 zł**/obiekt/mies. (590 zł/rok) | **119 zł**/obiekt/mies. (1190 zł/rok) |
+| Dla kogo | zaczynający; rynki w poziomie monitoring | samodzielny gospodarz 1–5 obiektów | gospodarze 3–10 obiektów, obiekty z recepcją |
+| Zawartość | pozycja Twojej ceny vs mediana (codziennie), presja dostępności, kalendarz eventów z siłą wpływu, raport tygodniowy, alerty o skokach cen | wszystko z MONITORA + rekomendacja ceny na każdą noc (60 dni) z wyjaśnieniem po polsku, akceptacja 1 kliknięciem z maila, licznik wyniku, iCal | wszystko z REKOMENDACJI + konta zespołowe (właściciel/recepcja), wsparcie <24 h rob., kwartalny przegląd cen 1:1, lokalny event na życzenie w 48 h, auto-zapis cen w cenie gdy zadebiutuje |
+| Start | 1. miesiąc 0 zł, bez karty | 1. miesiąc 0 zł, bez karty | 1. miesiąc 0 zł, bez karty |
+| Rabat | od 5. obiektu −30% | od 5. obiektu −30% | od 5. obiektu −30% |
 
-Uzasadnienia liczb:
-- **59 zł** zamiast 49: recenzja słusznie punktowała 49 jako za nisko przy
-  kosztach scrapingu/eventów/wsparcia; 59 nadal wyraźnie pod PriceLabs
-  i pod progiem „nie liczę tego" dla obiektu z przychodem 4–8 tys. zł/mies.
-  Wariant roczny 590 zł przywraca psychologiczne „~49/mies." lojalnym.
-- **119 zł PRO**: wartość realna od dziś (role zespołowe i kuracja eventów
-  istnieją w produkcie; przegląd 1:1 to usługa founder-time, na pilocie
-  zaleta, nie koszt). Auto-zapis cen komunikowany wyłącznie jako
-  „w cenie pakietu, gdy zadebiutuje" — bez daty, bez vaporware'u.
-- **START za 0 zł** zamiast płatnego monitoringu: publiczne raporty SEO i tak
-  są darmowe; płatny monitoring kanibalizowałby lejek. START personalizuje
-  (Twój obiekt na tle rynku) i zbiera adresy pod listy oczekujących.
-- Piloci (5–10 gospodarzy): REKOMENDACJE 0 zł na 3 mies. w zamian za rozmowę
-  co 2 tyg. (§10) — poza publicznym cennikiem.
+Uzasadnienia liczb: 59 = pod PriceLabs, nad nieopłacalnym 49 (krytyka
+recenzenta), roczne 590 daje psychologiczne „~49/mies."; 119 = koszyk
+usługowy z rzeczy istniejących (role, kuracja eventów) + founder-time;
+29 = impulsowy próg wejścia, musi być wyraźnie bogatszy od darmowych
+publicznych raportów (personalizacja: TWÓJ obiekt na tle rynku, alerty).
+Napięcie do pilnowania: granica publiczny raport (miasto, bez
+personalizacji) vs Monitor (obiekt) — nie wzbogacać raportów publicznych
+ponad tę granicę. Spec §5.1 („Monitoring taniej lub darmowy w okresie
+oczekiwania") jest spełniony wariantem „taniej". Piloci poza cennikiem:
+Rekomendacje 0 zł na 3 mies. w zamian za rozmowy co 2 tyg. (§10).
 
-Do wdrożenia po akceptacji: `default_price_per_property` w konfiguracji
-(49 → 59), struktura pakietów w billingu, cennik na landingu.
+Do wdrożenia po akceptacji: `default_price_per_property` 49 → 59, struktura
+pakietów w billingu, cennik na landingu.
 
-**AKCEPTACJA siatki przez założyciela:** ………
+**AKCEPTACJA siatki 29/59/119 przez założyciela:** ………
 
 ---
 
