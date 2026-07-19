@@ -24,12 +24,16 @@ def test_ical_booked_nights_skipped_and_orphan_discounted(client, db_session):
     prop_id = client.post("/api/properties", json=PROPERTY_BODY, headers=headers).json()["id"]
 
     base = datetime.date.today() + datetime.timedelta(days=10)
+    # Kotwica na środę: sierota (base+1 = czwartek) i zwykła noc (base+5 =
+    # poniedziałek) są oba zwykłymi dniami roboczymi — bez zanieczyszczenia
+    # czynnikiem weekendu/niedzieli, inaczej test zależy od dnia uruchomienia.
+    base += datetime.timedelta(days=(2 - base.weekday()) % 7)
     # rezerwacje: base i base+2 zajęte -> base+1 to noc-sierota
     _book(db_session, prop_id, base)
     _book(db_session, prop_id, base + datetime.timedelta(days=2))
 
     recs = client.post(
-        f"/api/recommendations/{prop_id}/generate?days=20", headers=headers
+        f"/api/recommendations/{prop_id}/generate?days=25", headers=headers
     ).json()
     by_date = {r["stay_date"]: r for r in recs}
 
