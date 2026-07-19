@@ -137,3 +137,45 @@ def test_property_monitoring_includes_price_position(client, db_session):
     day = r.json()["days"][0]
     assert Decimal(day["median_price"]) == Decimal("200")
     assert day["price_position"] == 0.25  # base 250 vs mediana 200
+
+
+def test_property_monitoring_comp_set_segment(client, db_session):
+    """A2: 'obiekty jak Twój' = mediana konkurentów tego samego typu (apartment)."""
+    market = _seed_market(db_session)
+    headers = _register(client)
+    prop_id = client.post("/api/properties", json=PROPERTY_BODY, headers=headers).json()["id"]
+
+    from tests.test_monitoring import _listing, _obs
+
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    for i, price in enumerate([300, 400, 500, 600, 700]):  # 5 apartamentów
+        _obs(db_session, _listing(db_session, market, f"apt{i}", "Apartament"),
+             tomorrow, Decimal(str(price)))
+    for i, price in enumerate([100, 120]):  # pokoje — inny segment, poza comp setem
+        _obs(db_session, _listing(db_session, market, f"room{i}", "Pokój"),
+             tomorrow, Decimal(str(price)))
+    db_session.commit()
+
+    resp = client.get(f"/api/monitoring/property/{prop_id}?days=1", headers=headers)
+    day = resp.json()["days"][0]
+    assert Decimal(day["segment_median"]) == Decimal("500")  # mediana apartamentów, bez pokoi
+    assert day["segment_sample"] == 5
+
+
+def test_property_monitoring_comp_set_none_below_min_sample(client, db_session):
+    market = _seed_market(db_session)
+    headers = _register(client)
+    prop_id = client.post("/api/properties", json=PROPERTY_BODY, headers=headers).json()["id"]
+
+    from tests.test_monitoring import _listing, _obs
+
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    for i, price in enumerate([300, 400, 500, 600]):  # 4 < SEGMENT_MIN_SAMPLE
+        _obs(db_session, _listing(db_session, market, f"apt{i}", "Apartament"),
+             tomorrow, Decimal(str(price)))
+    db_session.commit()
+
+    resp = client.get(f"/api/monitoring/property/{prop_id}?days=1", headers=headers)
+    day = resp.json()["days"][0]
+    assert day["segment_median"] is None  # za mała próbka segmentu
+    assert day["segment_sample"] is None

@@ -160,6 +160,10 @@ export default function DashboardPage() {
   const medianByDate = new Map(
     (monitoring?.days ?? []).map((d) => [d.stay_date, d.median_price]),
   );
+  // Comp set segmentowy (A2): mediana "obiektów jak Twój" per data.
+  const segmentByDate = new Map(
+    (monitoring?.days ?? []).map((d) => [d.stay_date, d.segment_median]),
+  );
 
   return (
     <main style={{ maxWidth: 900 }}>
@@ -261,6 +265,7 @@ export default function DashboardPage() {
           <tr>
             <th>{t("date")}</th>
             <th>{t("median")}</th>
+            <th>{t("compSet")}</th>
             <th>{t("recommendation")}</th>
             <th>{t("why")}</th>
             <th>{t("status")}</th>
@@ -275,6 +280,11 @@ export default function DashboardPage() {
                 {medianByDate.get(rec.stay_date)
                   ? `${Number(medianByDate.get(rec.stay_date)).toFixed(0)} ${rec.currency_code}`
                   : t("noData")}
+              </td>
+              <td>
+                {segmentByDate.get(rec.stay_date)
+                  ? `${Number(segmentByDate.get(rec.stay_date)).toFixed(0)} ${rec.currency_code}`
+                  : "—"}
               </td>
               <td>
                 <strong>

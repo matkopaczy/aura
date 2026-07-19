@@ -100,6 +100,9 @@ export interface MonitoringDay {
   price_p25: string | null;
   price_p75: string | null;
   price_p90: string | null;
+  // Comp set segmentowy (A2) — mediana "obiektów jak Twój"; tylko w widoku obiektu.
+  segment_median: string | null;
+  segment_sample: number | null;
 }
 
 export interface MonitoringResponse {

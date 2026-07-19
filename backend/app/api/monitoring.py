@@ -10,8 +10,14 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser
 from app.db import get_db
-from app.models import CoverageLevel, Market, Property
-from app.monitoring import market_series, occupancy_by_ring, price_position
+from app.models import CoverageLevel, Market, Property, PropertyType
+from app.monitoring import (
+    SEGMENT_MIN_SAMPLE,
+    market_series,
+    occupancy_by_ring,
+    price_position,
+    segment_medians,
+)
 
 router = APIRouter(prefix="/api", tags=["monitoring"])
 
@@ -36,6 +42,10 @@ class MonitoringDayResponse(BaseModel):
     price_p25: Decimal | None = None
     price_p75: Decimal | None = None
     price_p90: Decimal | None = None
+    # Comp set segmentowy (A2) — mediana konkurentów TEGO SAMEGO typu ("obiekty
+    # jak Twój"); tylko w widoku obiektu i tylko gdy próbka >= SEGMENT_MIN_SAMPLE.
+    segment_median: Decimal | None = None
+    segment_sample: int | None = None
 
 
 class MonitoringResponse(BaseModel):
@@ -59,9 +69,19 @@ def list_markets(user: CurrentUser, db: DbSession) -> list[MarketResponse]:
 
 
 def _series_response(
-    db: DbSession, market: Market, days: int, base_price: Decimal | None
+    db: DbSession,
+    market: Market,
+    days: int,
+    base_price: Decimal | None,
+    segment_type: PropertyType | None = None,
 ) -> MonitoringResponse:
     series = market_series(db, market, days=days)
+    # Comp set segmentowy (A2) — tylko w widoku obiektu (segment_type podany).
+    segments = (
+        segment_medians(db, market, segment_type, days=days)
+        if segment_type is not None
+        else {}
+    )
     return MonitoringResponse(
         market_slug=market.slug,
         currency_code=market.currency_code,
@@ -80,10 +100,21 @@ def _series_response(
                 price_p25=day.price_p25,
                 price_p75=day.price_p75,
                 price_p90=day.price_p90,
+                segment_median=_segment_value(segments.get(day.stay_date)),
+                segment_sample=_segment_count(segments.get(day.stay_date)),
             )
             for day in series
         ],
     )
+
+
+def _segment_value(seg: tuple[Decimal, int] | None) -> Decimal | None:
+    """Mediana segmentu tylko przy próbce >= SEGMENT_MIN_SAMPLE (jak w silniku)."""
+    return seg[0] if seg is not None and seg[1] >= SEGMENT_MIN_SAMPLE else None
+
+
+def _segment_count(seg: tuple[Decimal, int] | None) -> int | None:
+    return seg[1] if seg is not None and seg[1] >= SEGMENT_MIN_SAMPLE else None
 
 
 @router.get("/monitoring/market/{market_slug}", response_model=MonitoringResponse)
@@ -109,7 +140,9 @@ def property_monitoring(
     if prop is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="property_not_found")
     market = db.get(Market, prop.market_id)
-    return _series_response(db, market, days, base_price=prop.base_price)
+    return _series_response(
+        db, market, days, base_price=prop.base_price, segment_type=prop.property_type
+    )
 
 
 class RingResponse(BaseModel):
