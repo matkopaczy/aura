@@ -53,7 +53,9 @@ webhooków przy zwrotach.
 [integracja Stripe→Fakturownia→KSeF](https://sprytnafirma.pl/podatki-i-ksiegowosc/stripe-faktura-ksef-2026-jak-wystawic),
 [API KSeF Fakturowni](https://github.com/fakturownia/API/blob/master/KSeF.md).
 
-**DECYZJA założyciela:** ………
+**DECYZJA założyciela (2026-07-19): Opcja A — Stripe Billing + Fakturownia.**
+Do potwierdzenia z księgową przed pierwszą fakturą: formalny wystawca
+i mapowanie zwrotów.
 
 ---
 
@@ -76,7 +78,10 @@ z §10 to 70%, więc próg gwarancji celowo łagodniejszy. Ryzyko finansowe
 w pilocie: maks. 10 klientów × 147 zł = 1 470 zł — koszt marketingowo
 znikomy wobec siły argumentu "nie ryzykujesz nic".
 
-**DECYZJA założyciela:** TAK/NIE + ewentualna korekta progów: ………
+**DECYZJA założyciela (2026-07-19): NIE.** Konsekwencje: landing i materiały
+sprzedażowe nie obiecują zwrotu; argumentem ryzyka pozostaje darmowy pierwszy
+miesiąc bez karty. Wątpliwość recenzenta o weryfikowalność licznika przestaje
+być blokująca dla oferty.
 
 ---
 
@@ -84,20 +89,44 @@ znikomy wobec siły argumentu "nie ryzykujesz nic".
 
 Punkt startowy ze specu: **49 zł/obiekt/mies.**, Monitoring taniej lub darmowy.
 
-### Propozycja siatki na pilota
+### DECYZJA założyciela (2026-07-19): trzy pakiety o zróżnicowanej cenie.
+Poniżej propozycja siatki (Claude jako dyrektor sprzedaży) — **do akceptacji**.
 
-| Plan | Cena | Zawartość |
-|---|---|---|
-| Pilot (3 mies.) | 0 zł | pełne Rekomendacje; w zamian rozmowa co 2 tyg. (NPS, §10) |
-| Rekomendacje | 49 zł/obiekt/mies. | pełny produkt po pilocie; pierwszy miesiąc darmowy (landing §4) |
-| Monitoring | 0 zł (okres oczekiwania) | raport rynkowy + mediany; lejek do listy oczekujących |
+### Propozycja: siatka trzypakietowa
 
-Do walidacji w pilocie (rozmowy, nie ankiety): kotwica wartości — jedna
-odzyskana noc w Poznaniu (~250 zł) płaci za 5 miesięcy abonamentu. Jeżeli
-piloci przy tej narracji nie mrugną — testować 69–79 zł dla rynków
-`recommendations` przy komercjalizacji; obniżyć zawsze łatwiej niż podnieść.
+Logika: darmowy pakiet robi lejek (koszt ~0 — wszystko już istnieje),
+środkowy jest produktem dla 90% klientów i kotwiczy się poniżej PriceLabs
+(~80 zł + ~40 zł dashboard), górny monetyzuje segment 2–10 obiektów
+i recepcje usługą + pierwszeństwem, nie obietnicami. Kotwica narracyjna:
+jedna odzyskana noc (250–500 zł) płaci za miesiąc.
 
-**DECYZJA założyciela:** ………
+| | **START** | **REKOMENDACJE** ⭐ | **PRO** |
+|---|---|---|---|
+| Cena | 0 zł | **59 zł**/obiekt/mies. albo 590 zł/rok (2 mies. gratis) | **119 zł**/obiekt/mies. albo 1190 zł/rok |
+| Dla kogo | zaczynający; rynki w monitoringu | samodzielny gospodarz 1–5 obiektów | gospodarze 3–10 obiektów, obiekty z recepcją |
+| Zawartość | pozycja Twojej ceny vs mediana rynku, presja dostępności, event tygodnia, cotygodniowy e-mail (1 obiekt, 1 rynek) | wszystko ze START + rekomendacje na 60 dni z wyjaśnieniami po polsku, akceptacja jednym kliknięciem z maila, pilne alerty (skoki cen, nagłe eventy), licznik wyniku, kalendarz iCal, wsparcie e-mail | wszystko z REKOMENDACJI + konta zespołowe z rolami (właściciel/recepcja), priorytetowe wsparcie (<24 h rob.), kwartalny przegląd strategii cenowej 1:1 (30 min), dodanie lokalnego wydarzenia do kalendarza na życzenie w 48 h, wcześniejszy dostęp do nowych funkcji — w tym automatyczny zapis cen w cenie pakietu, gdy zadebiutuje |
+| Start | — | 1. miesiąc 0 zł, bez karty (jest w produkcie) | 1. miesiąc 0 zł, bez karty |
+| Rabat | — | od 5. obiektu −30% | od 5. obiektu −30% |
+
+Uzasadnienia liczb:
+- **59 zł** zamiast 49: recenzja słusznie punktowała 49 jako za nisko przy
+  kosztach scrapingu/eventów/wsparcia; 59 nadal wyraźnie pod PriceLabs
+  i pod progiem „nie liczę tego" dla obiektu z przychodem 4–8 tys. zł/mies.
+  Wariant roczny 590 zł przywraca psychologiczne „~49/mies." lojalnym.
+- **119 zł PRO**: wartość realna od dziś (role zespołowe i kuracja eventów
+  istnieją w produkcie; przegląd 1:1 to usługa founder-time, na pilocie
+  zaleta, nie koszt). Auto-zapis cen komunikowany wyłącznie jako
+  „w cenie pakietu, gdy zadebiutuje" — bez daty, bez vaporware'u.
+- **START za 0 zł** zamiast płatnego monitoringu: publiczne raporty SEO i tak
+  są darmowe; płatny monitoring kanibalizowałby lejek. START personalizuje
+  (Twój obiekt na tle rynku) i zbiera adresy pod listy oczekujących.
+- Piloci (5–10 gospodarzy): REKOMENDACJE 0 zł na 3 mies. w zamian za rozmowę
+  co 2 tyg. (§10) — poza publicznym cennikiem.
+
+Do wdrożenia po akceptacji: `default_price_per_property` w konfiguracji
+(49 → 59), struktura pakietów w billingu, cennik na landingu.
+
+**AKCEPTACJA siatki przez założyciela:** ………
 
 ---
 
@@ -124,7 +153,9 @@ gospodarzach może biec równolegle — tak stanowi spec):
 
 Szacunek rynkowy: 3–6 tys. zł za pakiet (kancelaria butikowa e-commerce/IT).
 
-**DECYZJA założyciela (wybór kancelarii + budżet):** ………
+**DECYZJA założyciela (2026-07-19): odroczone** — wracamy przed publicznym
+startem; pilot na zaufanych gospodarzach biegnie bez konsultacji (zgodnie
+ze specem).
 
 ---
 
@@ -157,7 +188,17 @@ Rekomendacja: zacząć od **5a** (prostota, pełna niezawodność nocy) z jasnym
 planem odwrotu do 5b przy pierwszych oznakach blokady — przejście jest tanie
 w obie strony, a alert jakości danych wykryje problem pierwszej nocy.
 
-**DECYZJA założyciela (dostawca + termin + wariant 5a/5b):** ………
+**DECYZJA założyciela (2026-07-19): wariant 5b — hybryda.** VPS: baza + API +
+front + joby nie-scrapingowe (iCal, atrybucja, raporty, kontrola jakości,
+eventy); scraper cen zostaje na maszynie z łączem domowym i pisze do bazy na
+VPS (tunel WireGuard albo SSH). Incydenty z 17–19.07 (Docker, MSIX, antywirus)
+potwierdzają pilność. Dostawca i termin — do domówienia przy planie wdrożenia.
+
+Szkic podziału schedulera (do zaprojektowania przed wdrożeniem): dwa procesy
+z rozłącznymi zestawami jobów — „scheduler-scraper" (laptop: scraping 03:00 +
+floor) i „scheduler-core" (VPS: cała reszta); wspólna baza na VPS; kontrola
+jakości danych działa na VPS i pilnuje laptopa niejako z zewnątrz (spadek
+wolumenu = alert, także gdy laptop po prostu nie wstał).
 
 ---
 
