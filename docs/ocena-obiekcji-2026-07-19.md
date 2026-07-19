@@ -98,3 +98,35 @@ rezerwacja) + integracje PL. Wniosek spójny z 3c i 4a.
 - [x] 4a: rekonesans API polskich channel managerów — TAK (wyniki niżej)
 - [x] 7: wariant 89–129 przy write-backu — NIE (obowiązuje siatka 29/59/119)
 - [x] 1: Demand API w briefie prawnym — TAK (dopisane do decyzje-przedstartowe §4)
+
+## Rekonesans API channel managerów (4a) — 2026-07-19
+
+Cel: sprawdzić, czy write-back cen (§7.2, najtrwalszy moat wg recenzenta) ma
+gotową drogę techniczną w polskim ekosystemie, zanim po pilocie zdecydujemy
+o budowie. To rekonesans, nie zobowiązanie.
+
+**Kluczowe ustalenie — IdoBooking:** wprost otworzył API dla systemów
+Revenue Management — „pełna kontrola nad restrykcjami pobytu, dostępnością
+sprzedaży oraz elastyczne zarządzanie CENAMI we własnych integracjach"
+(changelog IdoBooking). To dokładnie interfejs, którego potrzebuje write-back
+Aury: ustawiamy rekomendowaną cenę, ich channel manager rozsyła ją na
+Booking/Airbnb/Expedia. Dodatkowo ich CM wystawia podgląd cen z OTA —
+potencjalnie alternatywne źródło danych o cenach (do zbadania: czy tylko
+własne oferty klienta, czy też konkurencja).
+
+**Krajobraz** (do pogłębienia przed samą budową): główni gracze PL to
+IdoBooking, Hotres, YieldPlanet, Profitroom, Roomadmin. YieldPlanet
+historycznie ma program partnerski dla RMS (do potwierdzenia u nich).
+Hotres — CM głównie przez panel; API do zweryfikowania bezpośrednio.
+
+**Wniosek dla strategii:** istnieje co najmniej jedna realna droga (IdoBooking)
+do write-backu bez budowania własnych integracji z każdym OTA osobno — piszemy
+do jednego CM, on robi dystrybucję. To obniża koszt moatu z „integracja z
+każdym portalem" do „integracja z 1-2 polskimi CM". Rekomendacja: po pilocie
+zacząć od IdoBooking (API dla RMS potwierdzone), pod warunkiem że wśród
+pilotów są jego użytkownicy — inaczej najpierw zmierzyć, z jakiego CM
+korzystają realni gospodarze (pytanie do onboarding-gospodarza w playbooku).
+
+Źródła: [changelog API IdoBooking (RMS/ceny)](https://www.idobooking.com/changelog/nowe-mozliwosci-api-idobooking-automatyzuj-zarzadzanie-warunkami-pobytu-sterujac-restrykcjami-dostepnoscia-sprzedazy-i-cenami-we-wlasnych-integracjach/),
+[Channel Manager IdoBooking](https://www.idobooking.com/en/features/channel-manager/),
+[Hotres CM](https://hotres.pl/channel-manager).

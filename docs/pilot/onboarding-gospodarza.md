@@ -34,6 +34,10 @@ reszta czasu to rozmowa i budowanie zaufania.
 ## Po onboardingu
 
 - [ ] Zapisz w notatkach: ustawiona cena bazowa i minimalna, czy podał iCal, pierwsze wrażenia.
+- [ ] **Zapytaj, z jakiego channel managera / systemu rezerwacji korzysta**
+      (IdoBooking, Hotres, YieldPlanet, Profitroom, ręcznie…) i zapisz. To dane
+      pod decyzję o automatycznym zapisie cen po pilocie (§7.2) — mając realny
+      rozkład CM wśród pilotów wiemy, z którym integrować się najpierw.
 - [ ] Umów rozmowę NPS-ową za 2 tygodnie (skrypt w `playbook.md`).
 - [ ] Dopisz gospodarza do arkusza metryk pilotu.
 
