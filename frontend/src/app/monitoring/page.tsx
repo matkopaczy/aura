@@ -11,6 +11,7 @@ import {
   getMarketMonitoring,
   getMarkets,
 } from "@/lib/api";
+import DemandCalendar from "@/components/DemandCalendar";
 
 function formatOccupancy(value: number | null, noData: string): string {
   return value === null ? noData : `${Math.round(value * 100)}%`;
@@ -71,6 +72,10 @@ export default function MonitoringPage() {
       </select>
 
       {error !== null && <p className="error">{t(error)}</p>}
+
+      {data !== null && (
+        <DemandCalendar days={data.days} events={events} currencyCode={data.currency_code} />
+      )}
 
       {data !== null && (
         <table>
