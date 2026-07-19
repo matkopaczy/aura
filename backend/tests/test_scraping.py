@@ -41,6 +41,16 @@ def test_listing_id_from_href():
     assert listing_id_from_href("https://www.booking.com/inne/strony.html") is None
 
 
+def test_market_supply_from_totals():
+    """A5: podaż = maksimum z dziennych nagłówków; None pomijane; pusto -> None."""
+    from app.scraping.runner import market_supply_from_totals
+
+    assert market_supply_from_totals([200, 581, None, 340]) == 581  # szczyt
+    assert market_supply_from_totals([None, 150, None]) == 150  # None pominięte
+    assert market_supply_from_totals([None, None]) is None  # sam anty-bot
+    assert market_supply_from_totals([]) is None  # brak danych
+
+
 def test_parse_results_total():
     """Nagłówek wyników → łączna liczba obiektów; to podstawa flagi exhaustive
     (offset w URL jest ignorowany przez Booking, więc 'ostatnia strona <25'

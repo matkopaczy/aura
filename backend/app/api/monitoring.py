@@ -14,6 +14,7 @@ from app.models import CoverageLevel, Market, Property, PropertyType
 from app.monitoring import (
     SEGMENT_MIN_SAMPLE,
     latest_floor,
+    latest_supply,
     market_series,
     occupancy_by_ring,
     price_position,
@@ -60,6 +61,9 @@ class MonitoringResponse(BaseModel):
     # None gdy brak sygnału floor (nocowanie.pl).
     floor_min: Decimal | None = None
     floor_median: Decimal | None = None
+    # Podaż rynku (A5) — liczba ofert (najnowsza migawka) + poprzednia (trend).
+    supply_total: int | None = None
+    supply_previous: int | None = None
 
 
 @router.get("/markets", response_model=list[MarketResponse])
@@ -91,11 +95,14 @@ def _series_response(
         else {}
     )
     floor = latest_floor(db, market)  # A7: spread floor–mediana
+    supply = latest_supply(db, market)  # A5: podaż rynku
     return MonitoringResponse(
         market_slug=market.slug,
         currency_code=market.currency_code,
         floor_min=floor.min_price if floor is not None else None,
         floor_median=floor.median_price if floor is not None else None,
+        supply_total=supply.total if supply is not None else None,
+        supply_previous=supply.previous if supply is not None else None,
         days=[
             MonitoringDayResponse(
                 stay_date=day.stay_date,

@@ -8,6 +8,7 @@ from app.models.floor import FloorSignal
 from app.models.market import CoverageLevel, CurationStatus, Event, Market
 from app.models.property import Property, PropertyType
 from app.models.recommendation import DecisionChannel, Recommendation, RecommendationStatus
+from app.models.supply import MarketSupply
 from app.models.waitlist import WaitlistEntry
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "Event",
     "FloorSignal",
     "Market",
+    "MarketSupply",
     "PriceObservation",
     "Property",
     "PropertyType",

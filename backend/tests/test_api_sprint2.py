@@ -211,3 +211,22 @@ def test_monitoring_response_floor_none_without_signal(client, db_session):
     body = client.get(f"/api/monitoring/market/{market.slug}?days=1", headers=headers).json()
     assert body["floor_min"] is None
     assert body["floor_median"] is None
+
+
+def test_monitoring_response_supply_and_trend(client, db_session):
+    """A5: najnowsza podaż + poprzednia migawka (trend) w odpowiedzi rynkowej."""
+    from app.models import MarketSupply
+
+    market = _seed_market(db_session)
+    headers = _register(client)
+    db_session.add_all([
+        MarketSupply(market_id=market.id, source="booking", total_listings=500,
+                     observed_at=datetime.datetime(2026, 7, 15, tzinfo=datetime.UTC)),
+        MarketSupply(market_id=market.id, source="booking", total_listings=560,
+                     observed_at=datetime.datetime(2026, 7, 16, tzinfo=datetime.UTC)),
+    ])
+    db_session.commit()
+
+    body = client.get(f"/api/monitoring/market/{market.slug}?days=1", headers=headers).json()
+    assert body["supply_total"] == 560  # najnowsza migawka
+    assert body["supply_previous"] == 500  # poprzednia -> trend +12%

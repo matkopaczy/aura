@@ -215,6 +215,7 @@
     "sample": "Próbka",
     "occupancy": "Presja dostępności okolicy",
     "spreadLine": "Najtańszy dostępny w okolicy: {min} {currency}, mediana rynku: {median} {currency} — rozpiętość {spread}%. Wąska = mało miejsca na podwyżkę, szeroka = jest pole.",
+    "supplyLine": "Podaż rynku: {count} ofert konkurencji.",
     "demandTitle": "Kalendarz popytu (60 dni)",
     "demandHint": "Kolor = mediana ceny dnia względem tego rynku. Ciemniejszy dzień = droższy rynek, czyli wyższy popyt — tam warto podnieść. Dane ofertowe z codziennego monitoringu.",
     "demandLegend": "jaśniej = taniej, ciemniej = drożej",

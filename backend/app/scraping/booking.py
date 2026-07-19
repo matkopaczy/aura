@@ -244,6 +244,7 @@ class BookingAdapter(SourceAdapter):
                         observed_at=datetime.datetime.now(datetime.UTC),
                         listings=list(seen.values()),
                         exhaustive=exhaustive,
+                        results_total=total,  # podaż (A5) — liczba ofert z nagłówka
                     )
                     time.sleep(self.request_interval_s)
             finally:

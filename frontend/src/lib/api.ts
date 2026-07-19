@@ -114,6 +114,9 @@ export interface MonitoringResponse {
   // Spread floor–mediana (A7) — najtańszy dostępny w okolicy vs mediana rynku.
   floor_min: string | null;
   floor_median: string | null;
+  // Podaż rynku (A5) — liczba ofert (najnowsza) + poprzednia migawka (trend).
+  supply_total: number | null;
+  supply_previous: number | null;
 }
 
 export interface EventItem {

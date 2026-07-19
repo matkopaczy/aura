@@ -17,6 +17,14 @@ function formatOccupancy(value: number | null, noData: string): string {
   return value === null ? noData : `${Math.round(value * 100)}%`;
 }
 
+// Podaż rynku (A5): trend liczby ofert między migawkami. Strzałka + znak
+// czytelne; próg 3% odsiewa szum pomiaru.
+function formatSupplyTrend(pct: number): string {
+  if (pct >= 3) return `▲ +${pct}% konkurencji`;
+  if (pct <= -3) return `▼ ${pct}% konkurencji`;
+  return "→ podaż stabilna";
+}
+
 // Tempo rynku (A4): pace to zmiana presji w pkt proc. Znak + strzałka czytelne
 // dla przeciętnej osoby; próg 3 pp odsiewa szum.
 function formatPace(value: number | null): string {
@@ -85,6 +93,19 @@ export default function MonitoringPage() {
 
       {data !== null && (
         <DemandCalendar days={data.days} events={events} currencyCode={data.currency_code} />
+      )}
+
+      {data !== null && data.supply_total !== null && (
+        <p className="hint">
+          {t("supplyLine", { count: data.supply_total })}
+          {data.supply_previous !== null &&
+            data.supply_previous !== 0 &&
+            ` ${formatSupplyTrend(
+              Math.round(
+                ((data.supply_total - data.supply_previous) / data.supply_previous) * 100,
+              ),
+            )}`}
+        </p>
       )}
 
       {data !== null && data.floor_min !== null && data.floor_median !== null && (

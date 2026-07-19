@@ -18,6 +18,7 @@ from app.models import (
     CompetitorListing,
     FloorSignal,
     Market,
+    MarketSupply,
     PriceObservation,
     PropertyType,
 )
@@ -109,6 +110,34 @@ class FloorView:
     min_price: Decimal
     median_price: Decimal
     sample_size: int
+
+
+@dataclass(frozen=True)
+class SupplyView:
+    total: int  # najnowsza migawka podaży (liczba ofert)
+    previous: int | None  # poprzednia migawka — do trendu; None gdy tylko jedna
+
+    @property
+    def change_pct(self) -> int | None:
+        if self.previous is None or self.previous == 0:
+            return None
+        return round((self.total - self.previous) / self.previous * 100)
+
+
+def latest_supply(db: Session, market: Market) -> SupplyView | None:
+    """Dwie najnowsze migawki podaży rynku (A5) — najnowsza + poprzednia (trend)."""
+    rows = db.scalars(
+        select(MarketSupply)
+        .where(MarketSupply.market_id == market.id)
+        .order_by(MarketSupply.observed_at.desc())
+        .limit(2)
+    ).all()
+    if not rows:
+        return None
+    return SupplyView(
+        total=rows[0].total_listings,
+        previous=rows[1].total_listings if len(rows) > 1 else None,
+    )
 
 
 def latest_floor(db: Session, market: Market) -> FloorView | None:

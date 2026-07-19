@@ -44,6 +44,9 @@ class DayObservation:
     observed_at: datetime.datetime  # UTC
     listings: list[ObservedListing]
     exhaustive: bool = False
+    # Podaż (A5): liczba ofert z nagłówka wyników ("znaleziono N obiektów").
+    # None gdy nagłówek nieodczytany (np. anty-bot). Runner agreguje po dacie.
+    results_total: int | None = None
 
 
 class SourceAdapter(ABC):

@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CompetitorListing, FloorSignal, Market, PriceObservation
+from app.models import CompetitorListing, FloorSignal, Market, MarketSupply, PriceObservation
 from app.scraping.base import DayObservation, FloorAdapter, SourceAdapter, get_adapter
 
 logger = logging.getLogger(__name__)
@@ -57,16 +57,49 @@ def stay_dates_for_market(market: Market, days_ahead: int) -> list[datetime.date
     return [today_local + datetime.timedelta(days=i) for i in range(1, days_ahead + 1)]
 
 
+def market_supply_from_totals(totals: list[int | None]) -> int | None:
+    """Redukuje dzienne "znaleziono N obiektów" do jednej podaży rynku (A5).
+
+    Nagłówek jest liczony per data pobytu, więc N zmienia się dzień po dniu
+    (data o wysokiej dostępności odsłania więcej ofert). Bierzemy MAKSIMUM —
+    szczyt najlepiej przybliża realny inwentarz rynku (data z najmniejszą
+    liczbą blokad = najbliżej pełnej podaży). Daty z anty-botem dają None i
+    są pomijane. Alternatywa: mediana (typowa, odporna na wyskok, lekko zaniża).
+    """
+    valid = [t for t in totals if t is not None]
+    return max(valid) if valid else None
+
+
 def scrape_market(db: Session, market: Market, days_ahead: int = 60) -> int:
     """Pełny nocny przebieg dla rynku. Zwraca liczbę zapisanych obserwacji."""
     observation_count = 0
     for source in market.active_sources:
         adapter = get_adapter(source)
         dates = stay_dates_for_market(market, days_ahead)
+        totals: list[int | None] = []
         for day in adapter.observe_market(market, dates):
             observation_count += _store_day(db, market, adapter, day)
+            totals.append(day.results_total)
             db.commit()  # commit per data pobytu — częściowy przebieg też ma wartość
+        _store_supply(db, market, adapter.source, totals)
     return observation_count
+
+
+def _store_supply(db: Session, market: Market, source: str, totals: list[int | None]) -> None:
+    """Zapisuje JEDNĄ migawkę podaży rynku per przebieg (A5). Brak danych = nic."""
+    supply = market_supply_from_totals(totals)
+    if supply is None:
+        return
+    db.add(
+        MarketSupply(
+            market_id=market.id,
+            source=source,
+            total_listings=supply,
+            observed_at=datetime.datetime.now(datetime.UTC),
+        )
+    )
+    db.commit()
+    logger.info("podaż %s/%s: %d ofert", market.slug, source, supply)
 
 
 def _store_day(
