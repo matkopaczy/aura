@@ -80,6 +80,15 @@ def run_event_ingest() -> None:
     run()  # zasila kandydatów na eventy z oficjalnych źródeł (DRAFT do kuracji)
 
 
+def run_data_quality_check() -> None:
+    from sqlalchemy.orm import Session
+
+    from app.data_quality import report_quality_issues
+
+    with Session(get_engine()) as db:
+        report_quality_issues(db)
+
+
 def build_scheduler() -> BlockingScheduler:
     from sqlalchemy.orm import Session
 
@@ -124,6 +133,14 @@ def build_scheduler() -> BlockingScheduler:
         run_event_ingest,
         CronTrigger(day_of_week="mon", hour=4, minute=0, timezone="Europe/Warsaw"),
         id="event-ingest",
+        misfire_grace_time=3600,
+    )
+    # Kontrola jakości danych po przebiegu scrapingu (cicha degradacja =
+    # incydenty 2026-07-18/19). 08:00 — po zakończeniu głębokich skanów.
+    scheduler.add_job(
+        run_data_quality_check,
+        CronTrigger(hour=8, minute=0, timezone="Europe/Warsaw"),
+        id="data-quality",
         misfire_grace_time=3600,
     )
     return scheduler

@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     billing_currency: str = "PLN"
     # Monitoring błędów (§6.1): brak DSN = Sentry wyłączony, bez infry na zapas (§11).
     sentry_dsn: str | None = None
+    # Alert jakości danych po nocnym przebiegu: brak adresu = tylko log WARNING.
+    admin_alert_email: str | None = None
 
 
 @lru_cache
