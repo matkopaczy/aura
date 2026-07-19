@@ -95,6 +95,11 @@ export interface MonitoringDay {
   sample_size: number;
   occupancy: number | null;
   price_position: number | null;
+  // Rozkład cen konkurencji (A1) — widełki wokół mediany; null przy małej próbce.
+  price_p10: string | null;
+  price_p25: string | null;
+  price_p75: string | null;
+  price_p90: string | null;
 }
 
 export interface MonitoringResponse {

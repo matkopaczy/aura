@@ -209,6 +209,7 @@
     "selectMarket": "Rynek",
     "date": "Data",
     "median": "Mediana rynku",
+    "priceBand": "Widełki rynku (typowe 50%)",
     "sample": "Próbka",
     "occupancy": "Presja dostępności okolicy",
     "noData": "brak danych",

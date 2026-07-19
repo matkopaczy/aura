@@ -31,6 +31,11 @@ class MonitoringDayResponse(BaseModel):
     sample_size: int
     occupancy: float | None
     price_position: float | None  # tylko w widoku obiektu
+    # Rozkład cen konkurencji (A1) — widełki wokół mediany; None gdy mała próbka.
+    price_p10: Decimal | None = None
+    price_p25: Decimal | None = None
+    price_p75: Decimal | None = None
+    price_p90: Decimal | None = None
 
 
 class MonitoringResponse(BaseModel):
@@ -71,6 +76,10 @@ def _series_response(
                     if base_price is not None and day.median_price
                     else None
                 ),
+                price_p10=day.price_p10,
+                price_p25=day.price_p25,
+                price_p75=day.price_p75,
+                price_p90=day.price_p90,
             )
             for day in series
         ],

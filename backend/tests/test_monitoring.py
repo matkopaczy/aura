@@ -8,7 +8,14 @@ from app.models import (
     PriceObservation,
     PropertyType,
 )
-from app.monitoring import market_series, price_position, segment_medians, unit_category
+from app.monitoring import (
+    DISTRIBUTION_MIN_SAMPLE,
+    _percentile,
+    market_series,
+    price_position,
+    segment_medians,
+    unit_category,
+)
 
 
 def _market(db) -> Market:
@@ -45,6 +52,42 @@ def test_unit_category_mapping():
     assert unit_category("Domek letniskowy") == PropertyType.GUESTHOUSE
     assert unit_category(None) is None
     assert unit_category("Coś nietypowego") is None
+
+
+def test_percentile_interpolation():
+    prices = [Decimal(str(p)) for p in (100, 200, 300, 400, 500)]
+    assert _percentile(prices, 50) == Decimal("300")
+    assert _percentile(prices, 25) == Decimal("200")  # pozycja 1.0 = dokładnie
+    assert _percentile(prices, 75) == Decimal("400")
+    assert _percentile(prices, 10) == Decimal("140")  # 100 + 0.4*(200-100)
+    assert _percentile(prices, 90) == Decimal("460")  # 400 + 0.6*(500-400)
+    assert _percentile([Decimal("250")], 25) == Decimal("250")  # jeden element
+
+
+def test_market_series_price_band(db_session):
+    market = _market(db_session)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    # 10 cen 100..1000 — próbka >= DISTRIBUTION_MIN_SAMPLE, widełki się liczą
+    for i in range(10):
+        _obs(db_session, _listing(db_session, market, f"pl/{i}"),
+             tomorrow, Decimal(str((i + 1) * 100)))
+    db_session.commit()
+    day = next(d for d in market_series(db_session, market, days=1) if d.stay_date == tomorrow)
+    assert day.sample_size == 10
+    assert day.price_p25 is not None and day.price_p75 is not None
+    assert day.price_p10 < day.price_p25 < day.median_price < day.price_p75 < day.price_p90
+
+
+def test_market_series_no_band_below_min_sample(db_session):
+    market = _market(db_session)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    for i in range(DISTRIBUTION_MIN_SAMPLE - 1):  # o jeden za mało
+        _obs(db_session, _listing(db_session, market, f"pl/{i}"),
+             tomorrow, Decimal(str((i + 1) * 100)))
+    db_session.commit()
+    day = next(d for d in market_series(db_session, market, days=1) if d.stay_date == tomorrow)
+    assert day.median_price is not None  # mediana zawsze
+    assert day.price_p25 is None and day.price_p75 is None  # widełki dopiero od progu
 
 
 def test_segment_medians_filters_by_type(db_session):

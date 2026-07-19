@@ -78,6 +78,7 @@ export default function MonitoringPage() {
             <tr>
               <th>{t("date")}</th>
               <th>{t("median")}</th>
+              <th>{t("priceBand")}</th>
               <th>{t("sample")}</th>
               <th>{t("occupancy")}</th>
             </tr>
@@ -90,6 +91,11 @@ export default function MonitoringPage() {
                   {day.median_price !== null
                     ? `${Number(day.median_price).toFixed(0)} ${data.currency_code}`
                     : t("noData")}
+                </td>
+                <td>
+                  {day.price_p25 !== null && day.price_p75 !== null
+                    ? `${Number(day.price_p25).toFixed(0)}–${Number(day.price_p75).toFixed(0)} ${data.currency_code}`
+                    : "—"}
                 </td>
                 <td>{day.sample_size}</td>
                 <td>{formatOccupancy(day.occupancy, t("noData"))}</td>

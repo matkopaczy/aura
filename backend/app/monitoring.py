@@ -26,6 +26,26 @@ from app.models import (
 # mediany całego rynku (bezpieczny fallback — nigdy nie pogarszamy §11).
 SEGMENT_MIN_SAMPLE = 5
 
+# Rozkład cen (A1): poniżej tylu obserwacji percentyle są mylące (za mała
+# próbka na sensowne widełki) — zwracamy None, sama mediana zostaje.
+DISTRIBUTION_MIN_SAMPLE = 8
+
+
+def _percentile(sorted_prices: list[Decimal], q_percent: int) -> Decimal:
+    """Percentyl (q_percent∈0..100) z posortowanej listy, interpolacja liniowa.
+
+    Cała arytmetyka na Decimalu — float przeciekałby artefaktami do kwot.
+    Zakłada niepustą, posortowaną rosnąco listę.
+    """
+    if len(sorted_prices) == 1:
+        return sorted_prices[0]
+    pos = Decimal(q_percent) / 100 * (len(sorted_prices) - 1)
+    lower = int(pos)
+    if lower + 1 >= len(sorted_prices):
+        return sorted_prices[lower]
+    frac = pos - lower
+    return sorted_prices[lower] + frac * (sorted_prices[lower + 1] - sorted_prices[lower])
+
 
 def unit_category(unit_type: str | None) -> PropertyType | None:
     """Mapuje wolnotekstowy unit_type konkurenta na gruby typ obiektu."""
@@ -117,12 +137,18 @@ PACE_MIN_SAMPLE = 5
 @dataclass(frozen=True)
 class MarketDay:
     stay_date: datetime.date
-    median_price: Decimal | None  # None gdy brak próbki
+    median_price: Decimal | None  # None gdy brak próbki (= percentyl 50)
     sample_size: int
     occupancy: float | None  # None gdy brak danych wyczerpujących (§ runner)
     # Tempo wypełniania rynku: zmiana obłożenia między dwoma ostatnimi przebiegami
     # scrapera (+0.15 = o 15 pkt proc. więcej rynku zajęte niż poprzednio). §7.2.
     booking_pace: float | None = None
+    # Rozkład cen konkurencji (A1) — widełki zamiast jednej liczby. None gdy
+    # próbka < DISTRIBUTION_MIN_SAMPLE (mediana i tak jest w median_price).
+    price_p10: Decimal | None = None
+    price_p25: Decimal | None = None
+    price_p75: Decimal | None = None
+    price_p90: Decimal | None = None
 
 
 def _run_occupancy(availabilities: list[bool]) -> float | None:
@@ -185,6 +211,8 @@ def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay
         observations = by_date.get(stay_date, [])
         prices = [price for price, available, _ in observations if available and price is not None]
         unavailable = sum(1 for _, available, _ in observations if not available)
+        has_band = len(prices) >= DISTRIBUTION_MIN_SAMPLE
+        ordered = sorted(prices) if has_band else []
         series.append(
             MarketDay(
                 stay_date=stay_date,
@@ -194,6 +222,10 @@ def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay
                     unavailable / len(observations) if unavailable and observations else None
                 ),
                 booking_pace=_booking_pace(runs.get(stay_date, {})),
+                price_p10=_percentile(ordered, 10) if has_band else None,
+                price_p25=_percentile(ordered, 25) if has_band else None,
+                price_p75=_percentile(ordered, 75) if has_band else None,
+                price_p90=_percentile(ordered, 90) if has_band else None,
             )
         )
     return series
