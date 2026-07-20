@@ -136,6 +136,12 @@
     "counterAccepted": "zaakceptowane: {count}",
     "counterSold": "sprzedane terminy: {count}",
     "counterConservativeSold": "z tego ostrożnie liczone: {count}",
+    "perfTitle": "Twoje prawdziwe wyniki",
+    "perfHint": "Z Twoich zaimportowanych rezerwacji, ostatnie {days} dni — liczone z realnych sprzedaży, nie z modelu.",
+    "perfAdr": "Średnia cena za sprzedaną noc (ADR)",
+    "perfOccupancy": "Obłożenie",
+    "perfRevpar": "Przychód na dostępną noc (RevPAR)",
+    "perfNights": "Sprzedane noce",
     "ringsTitle": "Presja dostępności wg odległości od centrum",
     "ringsHint": "Przybliżona mapa miasta: jak zapełnia się konkurencja bliżej i dalej od centrum (najbliższe 30 dni).",
     "ringsListings": "{count} obiektów",
@@ -204,6 +210,16 @@
     "saved": "Zapisano.",
     "loadError": "Nie udało się pobrać danych.",
     "saveError": "Nie udało się zapisać. Sprawdź wartości."
+  },
+  "bookingImport": {
+    "title": "Import rezerwacji (CSV)",
+    "hint": "Wgraj CSV rezerwacji z Booking/Airbnb (kolumny: data zameldowania, wymeldowania, cena, kanał). Odblokuje prawdziwe ADR/RevPAR w panelu.",
+    "busy": "Importuję…",
+    "done": "Zaimportowano {nights} nocy z {reservations} rezerwacji (pominięto wierszy: {skipped}).",
+    "loadError": "Nie udało się zaimportować pliku. Sprawdź format CSV.",
+    "file_too_large": "Plik za duży (limit 1 MB).",
+    "not_utf8": "Plik nie jest w kodowaniu UTF-8.",
+    "property_not_found": "Nie znaleziono obiektu."
   },
   "monitoring": {
     "title": "Monitoring rynku",

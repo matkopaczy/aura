@@ -164,6 +164,41 @@ def property_monitoring(
     )
 
 
+class PerformanceResponse(BaseModel):
+    window_days: int
+    booked_nights: int
+    adr: Decimal | None
+    occupancy: float
+    revpar: Decimal | None
+    currency_code: str
+
+
+@router.get("/monitoring/property/{property_id}/performance", response_model=PerformanceResponse)
+def property_performance(
+    property_id: uuid.UUID, user: CurrentUser, db: DbSession, days: int = 30
+) -> PerformanceResponse:
+    """Prawdziwe ADR/obłożenie/RevPAR z zaimportowanych rezerwacji (B2)."""
+    from app.performance import compute_performance
+
+    prop = db.scalar(
+        select(Property).where(
+            Property.id == property_id,
+            Property.account_id == user.account_id,  # izolacja tenantów (§6.2 pkt 1)
+        )
+    )
+    if prop is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="property_not_found")
+    perf = compute_performance(db, prop, window_days=days)
+    return PerformanceResponse(
+        window_days=perf.window_days,
+        booked_nights=perf.booked_nights,
+        adr=perf.adr,
+        occupancy=perf.occupancy,
+        revpar=perf.revpar,
+        currency_code=perf.currency_code,
+    )
+
+
 class RingResponse(BaseModel):
     ring: str  # km od centrum, np. "1-3"
     occupancy: float | None

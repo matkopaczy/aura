@@ -202,6 +202,33 @@ export const updateProperty = (id: string, patch: object) =>
 export const getPropertyMonitoring = (id: string, days = 60) =>
   request<MonitoringResponse>(`/api/monitoring/property/${id}?days=${days}`);
 
+// Prawdziwe metryki gospodarza z zaimportowanych rezerwacji (B2).
+export interface PropertyPerformance {
+  window_days: number;
+  booked_nights: number;
+  adr: string | null;
+  occupancy: number;
+  revpar: string | null;
+  currency_code: string;
+}
+
+export const getPropertyPerformance = (id: string, days = 30) =>
+  request<PropertyPerformance>(`/api/monitoring/property/${id}/performance?days=${days}`);
+
+export interface BookingImportResult {
+  imported_nights: number;
+  reservations: number;
+  skipped_rows: number;
+}
+
+// Import CSV rezerwacji (B1) — surowe text/csv jednym klientem HTTP.
+export const importBookings = (id: string, csvText: string) =>
+  request<BookingImportResult>(`/api/properties/${id}/bookings/import`, {
+    method: "POST",
+    headers: { "Content-Type": "text/csv" },
+    body: csvText,
+  });
+
 export interface ExplanationFactor {
   key: string;
   pct: number;

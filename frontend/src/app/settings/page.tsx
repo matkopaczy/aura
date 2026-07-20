@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ApiError, Me, Property, getMe, getProperties, updateProperty } from "@/lib/api";
 import AccountSection from "@/components/AccountSection";
+import BookingImportSection from "@/components/BookingImportSection";
 import TeamSection from "@/components/TeamSection";
 
 function formFromProperty(p: Property) {
@@ -153,6 +154,7 @@ export default function SettingsPage() {
           <button type="submit">{t("save")}</button>
         </form>
       )}
+      {propertyId && <BookingImportSection propertyId={propertyId} />}
       <TeamSection />
       <AccountSection />
     </main>

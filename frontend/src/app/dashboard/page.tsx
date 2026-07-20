@@ -8,6 +8,7 @@ import {
   EventItem,
   MonitoringResponse,
   Property,
+  PropertyPerformance,
   Recommendation,
   decideRecommendation,
   generateRecommendations,
@@ -16,6 +17,7 @@ import {
   getMarketEvents,
   getProperties,
   getPropertyMonitoring,
+  getPropertyPerformance,
   getPropertyRings,
   getRecommendations,
 } from "@/lib/api";
@@ -72,6 +74,7 @@ export default function DashboardPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [monitoring, setMonitoring] = useState<MonitoringResponse | null>(null);
   const [attribution, setAttribution] = useState<Attribution | null>(null);
+  const [performance, setPerformance] = useState<PropertyPerformance | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [rings, setRings] = useState<RingItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -100,12 +103,14 @@ export default function DashboardPage() {
       getPropertyMonitoring(propertyId, 60),
       getAttribution(propertyId),
       getPropertyRings(propertyId),
+      getPropertyPerformance(propertyId),
     ])
-      .then(([recs, mon, attr, ringRows]) => {
+      .then(([recs, mon, attr, ringRows, perf]) => {
         setRecommendations(recs);
         setMonitoring(mon);
         setAttribution(attr);
         setRings(ringRows);
+        setPerformance(perf);
       })
       .catch(handleError);
   }, [propertyId, handleError]);
@@ -211,6 +216,45 @@ export default function DashboardPage() {
             </div>
           </div>
           <small style={{ display: "block", color: "#555" }}>{t("counterConservativeHint")}</small>
+        </section>
+      )}
+
+      {performance !== null && performance.booked_nights > 0 && (
+        <section style={{ marginBottom: "1.5rem" }}>
+          <h2>{t("perfTitle")}</h2>
+          <p style={{ color: "#555", marginTop: 0 }}>
+            {t("perfHint", { days: performance.window_days })}
+          </p>
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+            <div>
+              <small style={{ color: "#555" }}>{t("perfAdr")}</small>
+              <p style={{ fontSize: "1.6rem", margin: "0.1rem 0", fontWeight: 700 }}>
+                {performance.adr !== null
+                  ? `${Number(performance.adr).toFixed(0)} ${performance.currency_code}`
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <small style={{ color: "#555" }}>{t("perfOccupancy")}</small>
+              <p style={{ fontSize: "1.6rem", margin: "0.1rem 0", fontWeight: 700 }}>
+                {Math.round(performance.occupancy * 100)}%
+              </p>
+            </div>
+            <div>
+              <small style={{ color: "#555" }}>{t("perfRevpar")}</small>
+              <p style={{ fontSize: "1.6rem", margin: "0.1rem 0", fontWeight: 700 }}>
+                {performance.revpar !== null
+                  ? `${Number(performance.revpar).toFixed(0)} ${performance.currency_code}`
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <small style={{ color: "#555" }}>{t("perfNights")}</small>
+              <p style={{ fontSize: "1.6rem", margin: "0.1rem 0", fontWeight: 700 }}>
+                {performance.booked_nights}
+              </p>
+            </div>
+          </div>
         </section>
       )}
 
