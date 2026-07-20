@@ -249,6 +249,10 @@
   "monitoring": {
     "title": "Monitoring rynku",
     "selectMarket": "Rynek",
+    "guestsLabel": "Segment pobytu",
+    "guests2": "2 osoby",
+    "guests1": "1 osoba (pokoje 1-os.)",
+    "singlesHint": "Dane pokoi 1-osobowych zbieramy w lekkim przebiegu raz w tygodniu — mogą pojawiać się stopniowo.",
     "date": "Data",
     "median": "Mediana rynku",
     "priceBand": "Widełki rynku (typowe 50%)",

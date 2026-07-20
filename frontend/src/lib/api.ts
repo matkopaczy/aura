@@ -134,8 +134,10 @@ export interface EventItem {
 
 export const getMarkets = () => request<Market[]>("/api/markets");
 
-export const getMarketMonitoring = (slug: string, days = 30) =>
-  request<MonitoringResponse>(`/api/monitoring/market/${slug}?days=${days}`);
+export const getMarketMonitoring = (slug: string, days = 30, guests = 2) =>
+  request<MonitoringResponse>(
+    `/api/monitoring/market/${slug}?days=${days}&guests=${guests}`,
+  );
 
 export const getMarketEvents = (slug: string) =>
   request<EventItem[]>(`/api/events/${slug}`);

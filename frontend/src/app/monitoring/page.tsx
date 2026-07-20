@@ -41,6 +41,7 @@ export default function MonitoringPage() {
   const [slug, setSlug] = useState<string>("");
   const [data, setData] = useState<MonitoringResponse | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [guests, setGuests] = useState<number>(2); // 2-os. (domyślnie) / 1-os.
   const [error, setError] = useState<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
@@ -62,13 +63,13 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     if (!slug) return;
-    Promise.all([getMarketMonitoring(slug, 30), getMarketEvents(slug)])
+    Promise.all([getMarketMonitoring(slug, 30, guests), getMarketEvents(slug)])
       .then(([monitoring, marketEvents]) => {
         setData(monitoring);
         setEvents(marketEvents);
       })
       .catch(handleError);
-  }, [slug, handleError]);
+  }, [slug, guests, handleError]);
 
   return (
     <main>
@@ -88,6 +89,32 @@ export default function MonitoringPage() {
           </option>
         ))}
       </select>
+
+      <fieldset style={{ border: "none", padding: "0.5rem 0", margin: 0 }}>
+        <legend style={{ padding: 0, fontSize: "0.9rem", color: "#555" }}>
+          {t("guestsLabel")}
+        </legend>
+        <label style={{ marginRight: "1rem" }}>
+          <input
+            type="radio"
+            name="guests"
+            checked={guests === 2}
+            onChange={() => setGuests(2)}
+          />{" "}
+          {t("guests2")}
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="guests"
+            checked={guests === 1}
+            onChange={() => setGuests(1)}
+          />{" "}
+          {t("guests1")}
+        </label>
+      </fieldset>
+
+      {guests === 1 && <p className="hint">{t("singlesHint")}</p>}
 
       {error !== null && <p className="error">{t(error)}</p>}
 

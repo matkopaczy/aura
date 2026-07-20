@@ -86,11 +86,12 @@ def _series_response(
     days: int,
     base_price: Decimal | None,
     segment_type: PropertyType | None = None,
+    guests: int = 2,
 ) -> MonitoringResponse:
-    series = market_series(db, market, days=days)
+    series = market_series(db, market, days=days, guests=guests)
     # Comp set segmentowy (A2) — tylko w widoku obiektu (segment_type podany).
     segments = (
-        segment_medians(db, market, segment_type, days=days)
+        segment_medians(db, market, segment_type, days=days, guests=guests)
         if segment_type is not None
         else {}
     )
@@ -138,12 +139,16 @@ def _segment_count(seg: tuple[Decimal, int] | None) -> int | None:
 
 @router.get("/monitoring/market/{market_slug}", response_model=MonitoringResponse)
 def market_monitoring(
-    market_slug: str, user: CurrentUser, db: DbSession, days: int = 60
+    market_slug: str, user: CurrentUser, db: DbSession, days: int = 60, guests: int = 2
 ) -> MonitoringResponse:
+    if guests not in (1, 2):  # segment pobytu: 1-os. lub 2-os.
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="invalid_guests"
+        )
     market = db.scalar(select(Market).where(Market.slug == market_slug))
     if market is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="market_not_found")
-    return _series_response(db, market, days, base_price=None)
+    return _series_response(db, market, days, base_price=None, guests=guests)
 
 
 @router.get("/monitoring/property/{property_id}", response_model=MonitoringResponse)
