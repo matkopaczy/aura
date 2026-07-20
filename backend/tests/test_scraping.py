@@ -217,6 +217,12 @@ def test_pages_for_market_deeper_on_small_markets():
 
     adapter = BookingAdapter.__new__(BookingAdapter)  # bez fetchowania robots
     adapter.pages_per_date = 2
+    adapter.deep_scan = True
     assert adapter.pages_for_market(_mk(6.0)) == SMALL_MARKET_PAGES   # kurort
     assert adapter.pages_for_market(_mk(8.0)) == SMALL_MARKET_PAGES  # granica włącznie
     assert adapter.pages_for_market(_mk(12.0)) == 2  # duże miasto
+
+    # Lekki przebieg 1-os. (deep_scan=False): zawsze płytko, nawet na kurorcie (§6.4).
+    adapter.deep_scan = False
+    assert adapter.pages_for_market(_mk(6.0)) == 2
+    assert adapter.pages_for_market(_mk(12.0)) == 2

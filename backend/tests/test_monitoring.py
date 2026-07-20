@@ -108,7 +108,7 @@ def test_segment_medians_filters_by_type(db_session):
     assert sample == 3
 
 
-def _obs(db, listing, stay_date, price, available=True, hours=0):
+def _obs(db, listing, stay_date, price, available=True, hours=0, guests=2):
     db.add(
         PriceObservation(
             listing_id=listing.id,
@@ -118,8 +118,29 @@ def _obs(db, listing, stay_date, price, available=True, hours=0):
             available=available,
             observed_at=datetime.datetime(2026, 7, 16, hours, 0, tzinfo=datetime.UTC),
             source="booking",
+            guests=guests,
         )
     )
+
+
+def test_market_series_segments_by_guests(db_session):
+    """Obserwacje 1-osobowe nie mieszają się do median 2-osobowych (i odwrotnie)."""
+    market = _market(db_session)
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    _obs(db_session, _listing(db_session, market, "pl/a"), tomorrow, Decimal("400"), guests=2)
+    _obs(db_session, _listing(db_session, market, "pl/b"), tomorrow, Decimal("410"), guests=2)
+    _obs(db_session, _listing(db_session, market, "pl/c"), tomorrow, Decimal("150"), guests=1)
+    db_session.commit()
+
+    two = next(d for d in market_series(db_session, market, days=1) if d.stay_date == tomorrow)
+    assert two.sample_size == 2  # tylko 2-os.
+    assert two.median_price == Decimal("405")  # mediana 400/410, bez 150
+
+    one = next(
+        d for d in market_series(db_session, market, days=1, guests=1) if d.stay_date == tomorrow
+    )
+    assert one.sample_size == 1
+    assert one.median_price == Decimal("150")  # tylko 1-os.
 
 
 def _obs_run(db, listing, stay_date, available, run_date):

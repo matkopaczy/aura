@@ -58,6 +58,7 @@ def detect_price_spikes(db: Session, market: Market) -> list[PriceSpike]:
         .where(
             CompetitorListing.market_id == market.id,
             PriceObservation.available.is_(True),
+            PriceObservation.guests == 2,  # alert o skokach cen z głównego skanu
             PriceObservation.stay_date >= today,
             PriceObservation.stay_date <= today + datetime.timedelta(days=HORIZON_DAYS),
         )

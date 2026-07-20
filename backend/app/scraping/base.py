@@ -68,13 +68,14 @@ class SourceAdapter(ABC):
         """
 
 
-def get_adapter(source: str) -> SourceAdapter:
+def get_adapter(source: str, **kwargs) -> SourceAdapter:
+    """kwargs (np. guests, deep_scan) trafiają do konstruktora adaptera."""
     from app.scraping.booking import BookingAdapter
 
     adapters: dict[str, type[SourceAdapter]] = {BookingAdapter.source: BookingAdapter}
     if source not in adapters:
         raise KeyError(f"Brak adaptera dla źródła: {source}")
-    return adapters[source]()
+    return adapters[source](**kwargs)
 
 
 @dataclass(frozen=True)

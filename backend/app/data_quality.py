@@ -50,6 +50,7 @@ def _counts_by_market(
         .join(CompetitorListing, CompetitorListing.market_id == Market.id)
         .join(PriceObservation, PriceObservation.listing_id == CompetitorListing.id)
         .where(
+            PriceObservation.guests == 2,  # kontrola jakości głównego skanu 2-os.
             PriceObservation.observed_at >= since,
             PriceObservation.observed_at < until,
         )

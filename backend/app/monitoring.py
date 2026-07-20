@@ -63,7 +63,7 @@ def unit_category(unit_type: str | None) -> PropertyType | None:
 
 
 def segment_medians(
-    db: Session, market: Market, property_type: PropertyType, days: int = 60
+    db: Session, market: Market, property_type: PropertyType, days: int = 60, guests: int = 2
 ) -> dict[datetime.date, tuple[Decimal, int]]:
     """Mediana cen konkurentów TEGO SAMEGO typu per data pobytu (median, próbka)."""
     today_local = datetime.datetime.now(ZoneInfo(market.timezone)).date()
@@ -82,6 +82,7 @@ def segment_medians(
         .join(CompetitorListing, CompetitorListing.id == PriceObservation.listing_id)
         .where(
             CompetitorListing.market_id == market.id,
+            PriceObservation.guests == guests,  # nie mieszaj 1-os. do median 2-os.
             PriceObservation.stay_date >= date_from,
             PriceObservation.stay_date <= date_to,
         )
@@ -199,7 +200,9 @@ def _booking_pace(runs: dict[datetime.date, dict]) -> float | None:
     return latest - previous
 
 
-def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay]:
+def market_series(
+    db: Session, market: Market, days: int = 60, guests: int = 2
+) -> list[MarketDay]:
     today_local = datetime.datetime.now(ZoneInfo(market.timezone)).date()
     date_from = today_local + datetime.timedelta(days=1)
     date_to = today_local + datetime.timedelta(days=days)
@@ -215,6 +218,7 @@ def market_series(db: Session, market: Market, days: int = 60) -> list[MarketDay
         .join(CompetitorListing, CompetitorListing.id == PriceObservation.listing_id)
         .where(
             CompetitorListing.market_id == market.id,
+            PriceObservation.guests == guests,  # segment 1-os. osobno od 2-os.
             PriceObservation.stay_date >= date_from,
             PriceObservation.stay_date <= date_to,
         )
@@ -300,6 +304,7 @@ def occupancy_by_ring(db: Session, market: Market, days: int = 30) -> list[RingO
         .where(
             CompetitorListing.market_id == market.id,
             CompetitorListing.distance_center_km.is_not(None),
+            PriceObservation.guests == 2,  # obłożenie okolicy z głównego skanu 2-os.
             PriceObservation.stay_date >= date_from,
             PriceObservation.stay_date <= date_to,
         )

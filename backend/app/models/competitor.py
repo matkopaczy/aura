@@ -65,5 +65,11 @@ class PriceObservation(Base):
     price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))  # NULL gdy niedostępny
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # Liczba gości wyszukiwania (A: pokoje 1-osobowe). 2 = domyślny skan; 1 =
+    # osobny lekki przebieg pod pobyty 1-os. Zapytania segmentują po tym polu,
+    # żeby ceny 1-os. nie mieszały się do median 2-os.
+    guests: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=2, server_default="2"
+    )
     observed_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(String(50), nullable=False)

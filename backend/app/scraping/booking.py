@@ -120,13 +120,23 @@ EXHAUSTIVE_MIN_COVERAGE = 0.99
 class BookingAdapter(SourceAdapter):
     source = "booking"
 
-    def __init__(self, pages_per_date: int = 2, request_interval_s: float = 2.5):
+    def __init__(
+        self,
+        pages_per_date: int = 2,
+        request_interval_s: float = 2.5,
+        guests: int = 2,
+        deep_scan: bool = True,
+    ):
         self.pages_per_date = pages_per_date
         self.request_interval_s = request_interval_s
+        self.guests = guests  # liczba dorosłych w wyszukiwaniu (1 = pokoje 1-os.)
+        # deep_scan=False: zawsze płytko (lekki przebieg 1-os., §6.4 — nie mnożymy
+        # obciążenia; głęboki skan tylko dla głównego przebiegu 2-os.).
+        self.deep_scan = deep_scan
         self._robots = read_robots(BASE_URL, USER_AGENT)
 
     def pages_for_market(self, market: Market) -> int:
-        if float(market.radius_km) <= SMALL_MARKET_RADIUS_KM:
+        if self.deep_scan and float(market.radius_km) <= SMALL_MARKET_RADIUS_KM:
             return max(self.pages_per_date, SMALL_MARKET_PAGES)
         return self.pages_per_date
 
@@ -136,7 +146,7 @@ class BookingAdapter(SourceAdapter):
                 "ss": market.name,
                 "checkin": stay_date.isoformat(),
                 "checkout": (stay_date + datetime.timedelta(days=1)).isoformat(),
-                "group_adults": 2,
+                "group_adults": self.guests,
                 "no_rooms": 1,
                 "group_children": 0,
             }

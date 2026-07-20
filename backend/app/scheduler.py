@@ -44,6 +44,23 @@ def run_market_scrape(market_id) -> None:
             send_spike_alerts(db, market)
 
 
+# Lekki przebieg pokoi 1-osobowych (§6.4): rzadziej (tygodniowo) i krócej
+# (30 dni) niż główny 2-os. — ceny pobytów 1-os. są stabilne, więc to wystarcza,
+# a obciążenie Bookinga rośnie minimalnie. Podbij horyzont/kadencję świadomie.
+SINGLES_HORIZON_DAYS = 30
+
+
+def run_market_scrape_singles(market_id) -> None:
+    from sqlalchemy.orm import Session
+
+    with Session(get_engine()) as db:
+        market = db.get(Market, market_id)
+        if market is None:
+            raise ValueError(f"Rynek {market_id} nie istnieje")
+        count = scrape_market(db, market, days_ahead=SINGLES_HORIZON_DAYS, guests=1)
+        logger.info("Zakończono scraping 1-os. %s: %d obserwacji", market.slug, count)
+
+
 def run_weekly_reports() -> None:
     from sqlalchemy.orm import Session
 
@@ -108,6 +125,14 @@ def build_scheduler() -> BlockingScheduler:
             CronTrigger(hour=3, minute=0, timezone=market.timezone),
             args=[market.id],
             id=f"scrape:{market.slug}",
+            misfire_grace_time=3600,
+        )
+        # Pokoje 1-osobowe: raz w tygodniu (środa 4:00 lok.), lekko — §6.4.
+        scheduler.add_job(
+            run_market_scrape_singles,
+            CronTrigger(day_of_week="wed", hour=4, minute=0, timezone=market.timezone),
+            args=[market.id],
+            id=f"scrape-singles:{market.slug}",
             misfire_grace_time=3600,
         )
     scheduler.add_job(

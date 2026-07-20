@@ -70,18 +70,25 @@ def market_supply_from_totals(totals: list[int | None]) -> int | None:
     return max(valid) if valid else None
 
 
-def scrape_market(db: Session, market: Market, days_ahead: int = 60) -> int:
-    """Pełny nocny przebieg dla rynku. Zwraca liczbę zapisanych obserwacji."""
+def scrape_market(
+    db: Session, market: Market, days_ahead: int = 60, guests: int = 2
+) -> int:
+    """Pełny przebieg dla rynku. guests=2 = główny nocny skan; guests=1 = lekki
+    przebieg pokoi 1-osobowych (płytki, krótszy horyzont — §6.4). Zwraca liczbę
+    zapisanych obserwacji."""
     observation_count = 0
     for source in market.active_sources:
-        adapter = get_adapter(source)
+        # Głęboki skan i migawka podaży tylko dla głównego przebiegu 2-os.;
+        # przebieg 1-os. jest lekki i nie nadpisuje podaży rynku (inna próbka).
+        adapter = get_adapter(source, guests=guests, deep_scan=(guests == 2))
         dates = stay_dates_for_market(market, days_ahead)
         totals: list[int | None] = []
         for day in adapter.observe_market(market, dates):
-            observation_count += _store_day(db, market, adapter, day)
+            observation_count += _store_day(db, market, adapter, day, guests=guests)
             totals.append(day.results_total)
             db.commit()  # commit per data pobytu — częściowy przebieg też ma wartość
-        _store_supply(db, market, adapter.source, totals)
+        if guests == 2:
+            _store_supply(db, market, adapter.source, totals)
     return observation_count
 
 
@@ -103,7 +110,7 @@ def _store_supply(db: Session, market: Market, source: str, totals: list[int | N
 
 
 def _store_day(
-    db: Session, market: Market, adapter: SourceAdapter, day: DayObservation
+    db: Session, market: Market, adapter: SourceAdapter, day: DayObservation, guests: int = 2
 ) -> int:
     known = {
         listing.source_listing_id: listing
@@ -142,6 +149,7 @@ def _store_day(
                 available=True,
                 observed_at=day.observed_at,
                 source=adapter.source,
+                guests=guests,
             )
         )
 
@@ -162,6 +170,7 @@ def _store_day(
                 available=False,
                 observed_at=day.observed_at,
                 source=adapter.source,
+                guests=guests,
             )
         )
 
