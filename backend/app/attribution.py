@@ -1,9 +1,11 @@
 """Licznik wyniku (§3 pkt 4): uczciwa atrybucja rekomendacji.
 
-Po minięciu daty pobytu sprawdzamy w kalendarzu iCal, czy termin się
-sprzedał. Raportujemy "dodatkowy przychód z zaakceptowanych podwyżek" —
-sumę dodatnich delt sprzedanych, zaakceptowanych rekomendacji. Nigdy
-"zarobiliśmy Ci X".
+Po minięciu daty pobytu sprawdzamy, czy termin się sprzedał. Źródło prawdy
+(B3): zaimportowane rezerwacje gospodarza (Booking) — znamy RZECZYWISTĄ cenę
+sprzedaży, więc delta = cena_sprzedaży - poprzednia (prawdziwy uplift, nie
+założenie). Fallback: iCal (sama zajętość, delta szacowana z rekomendacji),
+gdy gospodarz nie zaimportował rezerwacji. Raportujemy "dodatkowy przychód
+z zaakceptowanych podwyżek" — sumę dodatnich delt. Nigdy "zarobiliśmy Ci X".
 """
 
 import datetime
@@ -14,7 +16,14 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CalendarDay, Market, Property, Recommendation, RecommendationStatus
+from app.models import (
+    Booking,
+    CalendarDay,
+    Market,
+    Property,
+    Recommendation,
+    RecommendationStatus,
+)
 
 
 def update_outcomes(db: Session, prop: Property) -> int:
@@ -36,21 +45,35 @@ def update_outcomes(db: Session, prop: Property) -> int:
     if not pending_outcome:
         return 0
 
-    booked_days = set(
+    pending_dates = [r.stay_date for r in pending_outcome]
+    # Źródło prawdy: rzeczywiste rezerwacje z ceną (B3). Fallback: iCal (zajętość).
+    booked_prices = dict(
+        db.execute(
+            select(Booking.stay_date, Booking.nightly_price).where(
+                Booking.property_id == prop.id,
+                Booking.stay_date.in_(pending_dates),
+            )
+        ).all()
+    )
+    booked_ical = set(
         db.scalars(
             select(CalendarDay.stay_date).where(
                 CalendarDay.property_id == prop.id,
-                CalendarDay.stay_date.in_([r.stay_date for r in pending_outcome]),
+                CalendarDay.stay_date.in_(pending_dates),
             )
         )
     )
     for rec in pending_outcome:
-        sold = rec.stay_date in booked_days
-        rec.outcome_sold = sold
-        if sold and rec.previous_price is not None:
-            rec.revenue_delta = rec.recommended_price - rec.previous_price
-        else:
+        actual_price = booked_prices.get(rec.stay_date)
+        rec.outcome_sold = actual_price is not None or rec.stay_date in booked_ical
+        if rec.previous_price is None or not rec.outcome_sold:
             rec.revenue_delta = Decimal("0")
+        elif actual_price is not None:
+            # Prawdziwy uplift z rzeczywistej ceny sprzedaży (nie założenie).
+            rec.revenue_delta = actual_price - rec.previous_price
+        else:
+            # Fallback iCal — delta szacowana z rekomendowanej ceny.
+            rec.revenue_delta = rec.recommended_price - rec.previous_price
     db.commit()
     return len(pending_outcome)
 

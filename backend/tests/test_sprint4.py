@@ -62,6 +62,43 @@ def _mark_sold(db, prop, stay_date):
     db.commit()
 
 
+def _book_night(db, prop, stay_date, price):
+    from app.models import Booking, BookingChannel
+
+    db.add(Booking(
+        account_id=prop.account_id, property_id=prop.id, stay_date=stay_date,
+        nightly_price=Decimal(str(price)), currency_code="PLN",
+        channel=BookingChannel.BOOKING, imported_at=datetime.datetime.now(datetime.UTC),
+    ))
+    db.commit()
+
+
+def test_attribution_uses_real_booking_price(client, db_session):
+    """B3: gdy jest rezerwacja z ceną, delta liczona z RZECZYWISTEJ sprzedaży,
+    nie z rekomendacji (domknięcie luki 'szacowany')."""
+    _, _, prop = _property_with_recs(client, db_session)
+    # rekomendacja: poprzednia 200, rekomendowana 260 (szacunek dałby +60)
+    rec = _accepted_rec(db_session, prop, YESTERDAY, previous=Decimal("200"),
+                        price=Decimal("260"))
+    # ale realnie sprzedało się za 290 -> prawdziwy uplift +90
+    _book_night(db_session, prop, YESTERDAY, 290)
+
+    assert update_outcomes(db_session, prop) == 1
+    assert rec.outcome_sold is True
+    assert rec.revenue_delta == Decimal("90")  # 290 - 200, nie 260 - 200
+
+
+def test_attribution_booking_below_recommendation_is_honest(client, db_session):
+    """Rezerwacja poniżej rekomendacji -> delta prawdziwa (niższa niż szacunek)."""
+    _, _, prop = _property_with_recs(client, db_session)
+    rec = _accepted_rec(db_session, prop, YESTERDAY, previous=Decimal("200"),
+                        price=Decimal("260"))
+    _book_night(db_session, prop, YESTERDAY, 230)  # sprzedane taniej niż rekomendacja
+
+    update_outcomes(db_session, prop)
+    assert rec.revenue_delta == Decimal("30")  # 230 - 200, uczciwie mniej niż 60
+
+
 def test_attribution_sold_and_unsold(client, db_session):
     _, _, prop = _property_with_recs(client, db_session)
     sold_rec = _accepted_rec(db_session, prop, YESTERDAY)
