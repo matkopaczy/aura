@@ -23,6 +23,7 @@ import {
 } from "@/lib/api";
 import { renderExplanation } from "@/lib/explanations";
 import SubscriptionBanner from "@/components/SubscriptionBanner";
+import FactorWaterfall from "@/components/FactorWaterfall";
 
 function MedianChart({
   monitoring,
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   const [performance, setPerformance] = useState<PropertyPerformance | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [rings, setRings] = useState<RingItem[]>([]);
+  const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleError = useCallback((e: unknown) => {
@@ -169,6 +171,7 @@ export default function DashboardPage() {
   const segmentByDate = new Map(
     (monitoring?.days ?? []).map((d) => [d.stay_date, d.segment_median]),
   );
+  const selectedRec = recommendations.find((r) => r.id === selectedRecId) ?? null;
 
   return (
     <main style={{ maxWidth: 900 }}>
@@ -337,7 +340,27 @@ export default function DashboardPage() {
                 {rec.previous_price !== null &&
                   ` (${Number(rec.previous_price).toFixed(0)})`}
               </td>
-              <td>{renderExplanation(te, rec.explanation_params.factors)}</td>
+              <td>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedRecId(selectedRecId === rec.id ? null : rec.id)
+                  }
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    color: "#2f6b2f",
+                    textDecoration: "underline",
+                    font: "inherit",
+                  }}
+                  title={t("showWaterfall")}
+                >
+                  {renderExplanation(te, rec.explanation_params.factors)}
+                </button>
+              </td>
               <td>{statusLabel[rec.status]}</td>
               <td>
                 {rec.status === "pending" && (
@@ -355,6 +378,16 @@ export default function DashboardPage() {
           ))}
         </tbody>
       </table>
+
+      {selectedRec !== null && (
+        <section style={{ marginTop: "1rem" }}>
+          <h3 style={{ marginBottom: "0.2rem" }}>
+            {t("waterfallTitle", { date: selectedRec.stay_date })}
+          </h3>
+          <p style={{ color: "#555", marginTop: 0 }}>{t("waterfallHint")}</p>
+          <FactorWaterfall rec={selectedRec} />
+        </section>
+      )}
 
       <section style={{ marginTop: "2rem" }}>
         <h2>{t("eventsTitle")}</h2>

@@ -142,6 +142,9 @@
     "perfOccupancy": "Obłożenie",
     "perfRevpar": "Przychód na dostępną noc (RevPAR)",
     "perfNights": "Sprzedane noce",
+    "showWaterfall": "Kliknij, aby zobaczyć rozkład ceny",
+    "waterfallTitle": "Jak powstaje cena na {date}",
+    "waterfallHint": "Od Twojej ceny bazowej, przez każdy czynnik, do rekomendacji. Ostatni słupek domyka zaokrąglenie i pozostałe czynniki.",
     "ringsTitle": "Presja dostępności wg odległości od centrum",
     "ringsHint": "Przybliżona mapa miasta: jak zapełnia się konkurencja bliżej i dalej od centrum (najbliższe 30 dni).",
     "ringsListings": "{count} obiektów",
@@ -210,6 +213,28 @@
     "saved": "Zapisano.",
     "loadError": "Nie udało się pobrać danych.",
     "saveError": "Nie udało się zapisać. Sprawdź wartości."
+  },
+  "waterfall": {
+    "base": "Cena bazowa",
+    "price": "Rekomendacja",
+    "reconcile": "zaokrąglenie i pozostałe",
+    "aria": "Rozkład ceny od {from} do {to} {currency} według czynników.",
+    "factor": {
+      "weekend": "weekend",
+      "sunday": "niedziela",
+      "high_season": "sezon wysoki",
+      "low_season": "sezon niski",
+      "event": "wydarzenie",
+      "event_venue": "wydarzenie",
+      "high_occupancy": "wysoka presja",
+      "mid_occupancy": "rosnąca presja",
+      "low_occupancy": "niska presja",
+      "booking_pace_up": "rynek przyspiesza",
+      "booking_pace_down": "rynek zwalnia",
+      "below_median": "poniżej mediany",
+      "above_median": "powyżej mediany",
+      "orphan_night": "wolna noc"
+    }
   },
   "bookingImport": {
     "title": "Import rezerwacji (CSV)",
