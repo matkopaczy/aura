@@ -2,12 +2,13 @@ import uuid
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, OwnerUser
+from app.bookings import import_bookings, parse_bookings_csv
 from app.db import get_db
 from app.models import Market, Property, PropertyType
 
@@ -116,6 +117,57 @@ def update_property(
     db.commit()
     market = db.get(Market, prop.market_id)
     return _to_response(prop, market)
+
+
+class BookingImportResult(BaseModel):
+    imported_nights: int  # liczba zapisanych nocy (po rozwinięciu rezerwacji)
+    reservations: int  # liczba wczytanych rezerwacji
+    skipped_rows: int  # wiersze pominięte (zła data/cena)
+
+
+# Limit rozmiaru importu (§11 — walidacja wejścia): ~1 MB CSV to tysiące
+# rezerwacji, z zapasem dla gospodarza z kilkoma obiektami.
+_MAX_CSV_BYTES = 1_000_000
+
+
+@router.post("/{property_id}/bookings/import", response_model=BookingImportResult)
+async def import_property_bookings(
+    property_id: uuid.UUID,
+    user: OwnerUser,
+    db: DbSession,
+    request: Request,
+) -> BookingImportResult:
+    """Import CSV zrealizowanych rezerwacji (B). Tylko właściciel; izolacja tenanta.
+
+    CSV w surowym ciele żądania (text/csv) — bez multipart, żeby nie dokładać
+    zależności (§11). Frontend wysyła zawartość pliku bezpośrednio.
+    """
+    prop = db.scalar(
+        select(Property).where(
+            Property.id == property_id,
+            Property.account_id == user.account_id,  # izolacja tenantów (§6.2 pkt 1)
+        )
+    )
+    if prop is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="property_not_found")
+    raw = await request.body()
+    if len(raw) > _MAX_CSV_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="file_too_large"
+        )
+    try:
+        content = raw.decode("utf-8-sig")  # -sig zjada BOM z Excela
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="not_utf8"
+        ) from None
+    reservations, skipped = parse_bookings_csv(content)
+    imported = import_bookings(db, prop, reservations)
+    return BookingImportResult(
+        imported_nights=imported,
+        reservations=len(reservations),
+        skipped_rows=skipped,
+    )
 
 
 @router.get("", response_model=list[PropertyResponse])

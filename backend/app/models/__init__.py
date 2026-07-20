@@ -2,6 +2,7 @@ from app.models.account import Account, User, UserRole
 from app.models.action_token import ActionToken, ActionTokenAction
 from app.models.base import Base
 from app.models.billing import ReportKind, ReportSent, Subscription, SubscriptionStatus
+from app.models.booking import Booking, BookingChannel
 from app.models.calendar import CalendarDay
 from app.models.competitor import CompetitorListing, PriceObservation
 from app.models.floor import FloorSignal
@@ -16,6 +17,8 @@ __all__ = [
     "ActionToken",
     "ActionTokenAction",
     "Base",
+    "Booking",
+    "BookingChannel",
     "CalendarDay",
     "CompetitorListing",
     "CoverageLevel",
