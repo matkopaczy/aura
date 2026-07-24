@@ -106,6 +106,33 @@ def run_data_quality_check() -> None:
         report_quality_issues(db)
 
 
+def run_backup() -> None:
+    """Backup bazy + test odtworzenia (§9). Po kontroli jakości — świeże dane
+    już zapisane. Alert e-mail przy niepowodzeniu (jak alert jakości danych)."""
+    import datetime
+
+    from app.backup import backup_dir, create_backup, prune_old_backups, test_restore
+    from app.config import get_settings
+
+    try:
+        path = create_backup()
+        test_restore(path)
+        removed = prune_old_backups(backup_dir(), datetime.datetime.now(datetime.UTC))
+        if removed:
+            logger.info("backup: usunięto %d starych kopii", len(removed))
+    except Exception:
+        logger.exception("backup lub test odtworzenia nieudany")
+        settings = get_settings()
+        if settings.smtp_host and settings.admin_alert_email:
+            from app.emails import send_email
+
+            send_email(
+                to=settings.admin_alert_email,
+                subject="Aura: backup bazy nieudany",
+                body="Nocny backup lub test odtworzenia nie powiódł się. Sprawdź logi schedulera.",
+            )
+
+
 def build_scheduler() -> BlockingScheduler:
     from sqlalchemy.orm import Session
 
@@ -166,6 +193,13 @@ def build_scheduler() -> BlockingScheduler:
         run_data_quality_check,
         CronTrigger(hour=8, minute=0, timezone="Europe/Warsaw"),
         id="data-quality",
+        misfire_grace_time=3600,
+    )
+    # Backup + test odtworzenia (§9): po kontroli jakości, świeże dane już zapisane.
+    scheduler.add_job(
+        run_backup,
+        CronTrigger(hour=8, minute=30, timezone="Europe/Warsaw"),
+        id="backup",
         misfire_grace_time=3600,
     )
     return scheduler
