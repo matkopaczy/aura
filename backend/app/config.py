@@ -29,9 +29,13 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: str | None = None
     email_from: str = "Aura <no-reply@localhost>"
-    # Abonament (§5, §12 pkt 4): 30 dni triału bez karty, cena do walidacji w pilocie.
+    # Abonament (§5, §12 pkt 4): 30 dni triału bez karty. Cena = środkowy
+    # pakiet "Rekomendacje" z zatwierdzonej siatki 29/59/119 zł (2026-07-19,
+    # decyzje-przedstartowe.md) — produkt dla ~90% klientów, dokładnie to,
+    # co triał odblokowuje. Pełne rozbicie na 3 pakiety czeka na wdrożenie
+    # Stripe Billing (niewdrożone).
     trial_days: int = 30
-    default_price_per_property: Decimal = Decimal("49")
+    default_price_per_property: Decimal = Decimal("59")
     billing_currency: str = "PLN"
     # Monitoring błędów (§6.1): brak DSN = Sentry wyłączony, bez infry na zapas (§11).
     sentry_dsn: str | None = None
