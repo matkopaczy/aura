@@ -11,7 +11,10 @@ from app.auth.security import hash_password
 from app.db import get_db
 from app.models import (
     Account,
+    ActionToken,
+    Booking,
     CalendarDay,
+    PasswordResetToken,
     Property,
     Recommendation,
     ReportSent,
@@ -131,11 +134,19 @@ def delete_account(user: OwnerUser, db: DbSession) -> None:
         db.scalars(select(User.email).where(User.account_id == account_id))
     )
     # Dzieci przed rodzicem — brak kaskady na poziomie DB (jedna ścieżka, §11).
+    # UWAGA: kolejność wymuszona przez FK; nowa tabela z account_id/FK do
+    # jednej z poniższych MUSI tu dostać wiersz, inaczej DELETE niżej pada
+    # (odtworzone na żywo 2026-07-24: ActionToken/Booking brakowały tu od
+    # commitów, które je wprowadziły — RODO-owe usunięcie konta 500-owało
+    # dla każdego konta z jakąkolwiek rezerwacją albo wysłanym mailem decyzji).
+    db.execute(delete(ActionToken).where(ActionToken.account_id == account_id))
     db.execute(delete(Recommendation).where(Recommendation.account_id == account_id))
+    db.execute(delete(Booking).where(Booking.account_id == account_id))
     db.execute(delete(CalendarDay).where(CalendarDay.account_id == account_id))
     db.execute(delete(Property).where(Property.account_id == account_id))
     db.execute(delete(ReportSent).where(ReportSent.account_id == account_id))
     db.execute(delete(Subscription).where(Subscription.account_id == account_id))
+    db.execute(delete(PasswordResetToken).where(PasswordResetToken.account_id == account_id))
     if emails:
         db.execute(delete(WaitlistEntry).where(WaitlistEntry.email.in_(emails)))
     db.execute(delete(User).where(User.account_id == account_id))

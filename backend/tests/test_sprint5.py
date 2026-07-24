@@ -1,10 +1,17 @@
 import datetime
+import uuid
+from decimal import Decimal
 
 from sqlalchemy import func, select
 
+from app.action_tokens import issue_tokens
 from app.billing import start_trial, view
 from app.models import (
     Account,
+    ActionToken,
+    Booking,
+    Recommendation,
+    RecommendationStatus,
     Subscription,
     SubscriptionStatus,
     User,
@@ -111,15 +118,45 @@ def test_account_export(client, db_session):
 
 
 def test_account_delete_removes_all_tenant_data(client, db_session):
+    """Odtworzenie realnego bugu (2026-07-24, żywy Postgres): konto z jakąkolwiek
+    rezerwacją lub tokenem decyzji e-mailowej 500-owało na FK przy usunięciu
+    (bookings/action_tokens brakowały w kolejności czyszczenia). SQLite w testach
+    nie egzekwuje FK domyślnie — dlatego sprawdzamy WYNIK (brak wierszy), nie
+    tylko status HTTP; to wykryje regresję niezależnie od silnika bazy."""
     _seed_market(db_session)
     headers = _register(client)
-    client.post("/api/properties", json=PROPERTY_BODY, headers=headers)
+    prop_id = client.post(
+        "/api/properties", json=PROPERTY_BODY, headers=headers
+    ).json()["id"]
+    client.post(
+        f"/api/properties/{prop_id}/bookings/import",
+        headers={**headers, "Content-Type": "text/csv"},
+        content="check_in,check_out,price,channel\n2026-06-01,2026-06-03,300,Booking.com\n",
+    )
+    account_id = db_session.scalar(select(Account.id))
+    rec = Recommendation(
+        account_id=account_id,
+        property_id=uuid.UUID(prop_id),
+        stay_date=datetime.date.today() + datetime.timedelta(days=1),
+        recommended_price=Decimal("260"),
+        previous_price=Decimal("200"),
+        currency_code="PLN",
+        explanation_template_key="v1",
+        explanation_params={"factors": []},
+        status=RecommendationStatus.PENDING,
+    )
+    db_session.add(rec)
+    db_session.commit()
+    issue_tokens(db_session, rec)  # tokeny decyzji e-mailowej — FK do recommendations
+    db_session.commit()
 
     r = client.delete("/api/account", headers=headers)
     assert r.status_code == 204
     assert db_session.scalar(select(func.count()).select_from(User)) == 0
     assert db_session.scalar(select(func.count()).select_from(Account)) == 0
     assert db_session.scalar(select(func.count()).select_from(Subscription)) == 0
+    assert db_session.scalar(select(func.count()).select_from(Booking)) == 0
+    assert db_session.scalar(select(func.count()).select_from(ActionToken)) == 0
     # token nie działa po usunięciu konta
     assert client.get("/api/auth/me", headers=headers).status_code == 401
 
