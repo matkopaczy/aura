@@ -12,6 +12,33 @@ import {
   joinWaitlist,
 } from "@/lib/api";
 import PolandOccupancyMap from "@/components/PolandOccupancyMap";
+import FactorWaterfall from "@/components/FactorWaterfall";
+import { Recommendation } from "@/lib/api";
+
+// Przykład poglądowy (§6.2 pkt 5, uczciwość produktu): NIE prawdziwe dane
+// użytkownika — landing nie ma zalogowanego konta. Jawnie oznaczony w UI jako
+// "Przykład" (t("exampleTitle")). Liczby zgodne z realną matematyką silnika
+// (weekend ×1.10, sezon wysoki ×1.10, zaokrąglenie do 5 zł) — ten sam mechanizm
+// co w panelu, nie fikcyjna dekoracja.
+const EXAMPLE_RECOMMENDATION: Recommendation = {
+  id: "example",
+  property_id: "example",
+  stay_date: "2026-08-14",
+  recommended_price: "485",
+  previous_price: "350",
+  currency_code: "PLN",
+  status: "pending",
+  explanation_template_key: "v1",
+  explanation_params: {
+    median: "410",
+    factors: [
+      { key: "event", pct: 15, name: "Weekend z Wniebowzięciem NMP" },
+      { key: "weekend", pct: 10 },
+      { key: "high_season", pct: 10 },
+    ],
+  },
+  decided_at: null,
+};
 
 function averageMedian(preview: MarketPreview): number | null {
   const values = preview.days
@@ -66,6 +93,36 @@ export default function HomePage() {
     <main style={{ maxWidth: 760 }}>
       <h1>{t("title")}</h1>
       <p>{t("subtitle")}</p>
+
+      <section
+        style={{
+          margin: "1.5rem 0",
+          padding: "1.25rem 1.5rem",
+          background: "#fff",
+          border: "1px solid #dbe5db",
+          borderRadius: 8,
+        }}
+      >
+        <span
+          style={{
+            display: "inline-block",
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            letterSpacing: "0.03em",
+            color: "#2f6b2f",
+            background: "#e7f3e7",
+            padding: "0.15rem 0.5rem",
+            borderRadius: 4,
+            marginBottom: "0.5rem",
+          }}
+        >
+          {t("exampleBadge")}
+        </span>
+        <h2 style={{ margin: "0 0 0.2rem" }}>{t("exampleTitle")}</h2>
+        <p style={{ color: "#555", marginTop: 0 }}>{t("exampleHint")}</p>
+        <FactorWaterfall rec={EXAMPLE_RECOMMENDATION} />
+      </section>
+
       <ul>
         <li>{t("sell1")}</li>
         <li>{t("sell2")}</li>
