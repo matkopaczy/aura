@@ -1,5 +1,6 @@
 from app.models.account import Account, User, UserRole
 from app.models.action_token import ActionToken, ActionTokenAction
+from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.billing import ReportKind, ReportSent, Subscription, SubscriptionStatus
 from app.models.booking import Booking, BookingChannel
@@ -17,6 +18,7 @@ __all__ = [
     "Account",
     "ActionToken",
     "ActionTokenAction",
+    "AuditLog",
     "Base",
     "Booking",
     "BookingChannel",

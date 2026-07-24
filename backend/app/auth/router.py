@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.audit import log as audit_log
 from app.auth.deps import CurrentUser
 from app.auth.security import create_access_token, hash_password, verify_password
 from app.billing import start_trial
@@ -68,6 +69,8 @@ def login(body: LoginRequest, db: DbSession) -> TokenResponse:
     user = db.scalar(select(User).where(User.email == body.email.lower()))
     if user is None or not user.is_active or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_credentials")
+    audit_log(db, user.account_id, user.id, "login")
+    db.commit()
     return TokenResponse(access_token=create_access_token(user.id, user.account_id))
 
 
@@ -97,17 +100,21 @@ def password_reset_request(
 ) -> PasswordResetRequestResponse:
     """Zawsze ten sam komunikat — nigdy nie zdradzamy, czy konto istnieje (§9)."""
     token = request_reset(db, body.email)
-    settings = get_settings()
-    if token is not None and settings.smtp_host:
-        from app.emails import send_email
-        from app.i18n import t
+    if token is not None:
+        user = db.scalar(select(User).where(User.email == body.email.lower()))
+        audit_log(db, user.account_id, user.id, "password_reset_requested")
+        db.commit()
+        settings = get_settings()
+        if settings.smtp_host:
+            from app.emails import send_email
+            from app.i18n import t
 
-        url = f"{settings.dashboard_url}/reset-password?token={token}"
-        send_email(
-            to=body.email.lower(),
-            subject=t("email.password_reset.subject"),
-            body=t("email.password_reset.body", url=url),
-        )
+            url = f"{settings.dashboard_url}/reset-password?token={token}"
+            send_email(
+                to=body.email.lower(),
+                subject=t("email.password_reset.subject"),
+                body=t("email.password_reset.body", url=url),
+            )
     return PasswordResetRequestResponse()
 
 
@@ -122,5 +129,7 @@ def password_reset_confirm(body: PasswordResetConfirmBody, db: DbSession) -> Tok
     token, user, error = resolve(db, body.token)
     if error is not None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    apply_reset(db, token, user, body.new_password)
+    apply_reset(db, token, user, body.new_password)  # commituje samo (patrz password_reset.py)
+    audit_log(db, user.account_id, user.id, "password_reset_confirmed")
+    db.commit()
     return TokenResponse(access_token=create_access_token(user.id, user.account_id))

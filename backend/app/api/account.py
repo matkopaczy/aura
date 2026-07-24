@@ -6,12 +6,14 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.audit import log as audit_log
 from app.auth.deps import OwnerUser
 from app.auth.security import hash_password
 from app.db import get_db
 from app.models import (
     Account,
     ActionToken,
+    AuditLog,
     Booking,
     CalendarDay,
     PasswordResetToken,
@@ -62,6 +64,7 @@ def create_reception(
         role=UserRole.RECEPTION,
     )
     db.add(user)
+    audit_log(db, owner.account_id, owner.id, "reception_created", target_email=user.email)
     db.commit()
     return TeamMember(id=user.id, email=user.email, role=user.role)
 
@@ -75,6 +78,7 @@ def delete_reception(user_id: uuid.UUID, owner: OwnerUser, db: DbSession) -> Non
     )
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user_not_found")
+    audit_log(db, owner.account_id, owner.id, "reception_deleted", target_email=user.email)
     db.delete(user)
     db.commit()
 
@@ -93,6 +97,8 @@ def export_account(user: OwnerUser, db: DbSession) -> dict:
     subscription = db.scalar(
         select(Subscription).where(Subscription.account_id == user.account_id)
     )
+    audit_log(db, user.account_id, user.id, "account_exported")
+    db.commit()
     return {
         "account": {"id": str(account.id), "name": account.name},
         "users": [{"email": u.email, "locale": u.locale} for u in users],
@@ -147,6 +153,10 @@ def delete_account(user: OwnerUser, db: DbSession) -> None:
     db.execute(delete(ReportSent).where(ReportSent.account_id == account_id))
     db.execute(delete(Subscription).where(Subscription.account_id == account_id))
     db.execute(delete(PasswordResetToken).where(PasswordResetToken.account_id == account_id))
+    # Audit log kasowany razem z kontem — poprawne zachowanie RODO (prawo do
+    # usunięcia obejmuje też ślad audytowy), nie luka: nie da się "zapisać
+    # dowodu usunięcia" w tabeli, którą właśnie się usuwa.
+    db.execute(delete(AuditLog).where(AuditLog.account_id == account_id))
     if emails:
         db.execute(delete(WaitlistEntry).where(WaitlistEntry.email.in_(emails)))
     db.execute(delete(User).where(User.account_id == account_id))
