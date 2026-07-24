@@ -21,7 +21,15 @@ SECURITY_HEADERS = {
 }
 
 # Rate limit tylko dla ścieżek uwierzytelniania (ochrona przed brute force).
-RATE_LIMITED_PATHS = {"/api/auth/login", "/api/auth/register"}
+# password-reset/request: bez limitu ktoś mógłby zalewać cudzą skrzynkę e-mailami.
+# password-reset/confirm: bez limitu ktoś mógłby brute-force'ować token (mimo że
+# 32 losowe bajty czynią to praktycznie niewykonalne — obrona w głąb).
+RATE_LIMITED_PATHS = {
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/password-reset/request",
+    "/api/auth/password-reset/confirm",
+}
 RATE_LIMIT_MAX = 10
 RATE_LIMIT_WINDOW_S = 60
 

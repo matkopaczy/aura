@@ -27,6 +27,8 @@
   "email.quality.subject": "Aura: spadek danych scrapingu ({count} rynków)",
   "email.quality.intro": "Nocny przebieg zebrał wyraźnie mniej danych niż poprzedni. Rynki poniżej progu:",
   "email.quality.line": "{market}: {previous} -> {current} obserwacji (-{pct}%)",
+  "email.password_reset.subject": "Aura: reset hasła",
+  "email.password_reset.body": "Otrzymaliśmy prośbę o reset hasła do Twojego konta Aura. Kliknij, aby ustawić nowe hasło (link ważny 30 minut): {url}\n\nJeśli to nie Ty, zignoruj tę wiadomość — Twoje hasło pozostanie bez zmian.",
   "factor.weekend": "weekend",
   "factor.sunday": "niedziela",
   "factor.high_season": "sezon wysoki",

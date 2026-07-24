@@ -7,6 +7,7 @@ from app.models.calendar import CalendarDay
 from app.models.competitor import CompetitorListing, PriceObservation
 from app.models.floor import FloorSignal
 from app.models.market import CoverageLevel, CurationStatus, Event, Market
+from app.models.password_reset import PasswordResetToken
 from app.models.property import Property, PropertyType
 from app.models.recommendation import DecisionChannel, Recommendation, RecommendationStatus
 from app.models.supply import MarketSupply
@@ -28,6 +29,7 @@ __all__ = [
     "FloorSignal",
     "Market",
     "MarketSupply",
+    "PasswordResetToken",
     "PriceObservation",
     "Property",
     "PropertyType",

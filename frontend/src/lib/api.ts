@@ -82,6 +82,23 @@ export function register(
   });
 }
 
+export function requestPasswordReset(email: string): Promise<{ detail: string }> {
+  return request("/api/auth/password-reset/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function confirmPasswordReset(
+  token: string,
+  newPassword: string,
+): Promise<TokenResponse> {
+  return request("/api/auth/password-reset/confirm", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}
+
 export interface Market {
   slug: string;
   name: string;

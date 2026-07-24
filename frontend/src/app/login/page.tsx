@@ -45,6 +45,9 @@ export default function LoginPage() {
         {error !== null && <p className="error">{error}</p>}
         <button type="submit">{t("submit")}</button>
       </form>
+      <p>
+        <a href="/forgot-password">{t("forgotPassword")}</a>
+      </p>
     </main>
   );
 }

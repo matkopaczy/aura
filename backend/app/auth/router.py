@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 from app.auth.deps import CurrentUser
 from app.auth.security import create_access_token, hash_password, verify_password
 from app.billing import start_trial
+from app.config import get_settings
 from app.db import get_db
 from app.models import Account, User
+from app.password_reset import apply_reset, request_reset, resolve
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -79,3 +81,46 @@ def me(user: CurrentUser) -> MeResponse:
         role=user.role,
         is_curator=user.is_curator,
     )
+
+
+class PasswordResetRequestBody(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetRequestResponse(BaseModel):
+    detail: str = "if_exists_sent"
+
+
+@router.post("/password-reset/request", response_model=PasswordResetRequestResponse)
+def password_reset_request(
+    body: PasswordResetRequestBody, db: DbSession
+) -> PasswordResetRequestResponse:
+    """Zawsze ten sam komunikat — nigdy nie zdradzamy, czy konto istnieje (§9)."""
+    token = request_reset(db, body.email)
+    settings = get_settings()
+    if token is not None and settings.smtp_host:
+        from app.emails import send_email
+        from app.i18n import t
+
+        url = f"{settings.dashboard_url}/reset-password?token={token}"
+        send_email(
+            to=body.email.lower(),
+            subject=t("email.password_reset.subject"),
+            body=t("email.password_reset.body", url=url),
+        )
+    return PasswordResetRequestResponse()
+
+
+class PasswordResetConfirmBody(BaseModel):
+    token: str
+    new_password: str = Field(min_length=10, max_length=200)
+
+
+@router.post("/password-reset/confirm", response_model=TokenResponse)
+def password_reset_confirm(body: PasswordResetConfirmBody, db: DbSession) -> TokenResponse:
+    """Ustawia nowe hasło i od razu loguje (jak rejestracja)."""
+    token, user, error = resolve(db, body.token)
+    if error is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+    apply_reset(db, token, user, body.new_password)
+    return TokenResponse(access_token=create_access_token(user.id, user.account_id))
